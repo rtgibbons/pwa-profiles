@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Fast, idempotent repair only. Do not install dependencies here.
+# This extension has no auth, tunnels, or backing services to reconnect.
+
+if ! command -v zip >/dev/null 2>&1; then
+  printf 'zip is missing; run .agents/setup\n' >&2
+  exit 1
+fi
