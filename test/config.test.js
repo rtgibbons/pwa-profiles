@@ -80,6 +80,12 @@ test("active tab color overrides accept only safe hex colors", () => {
 test("install icons must be large, square, supported, and usable for any purpose", () => {
   assert.equal(
     hasSuitableInstallIcon([
+      { src: "data:image/svg+xml;base64,PHN2Zy8+", sizes: "any", type: "image/svg+xml", purpose: "any maskable" },
+    ]),
+    true,
+  );
+  assert.equal(
+    hasSuitableInstallIcon([
       { src: "icon.png", sizes: "128x128 192x192", type: "image/png", purpose: "any maskable" },
     ]),
     true,

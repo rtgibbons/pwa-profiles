@@ -1,4 +1,16 @@
-import { createConfiguration, permissionOrigins, validateConfiguration } from "../lib/config.js";
+import {
+  createConfiguration,
+  hasSuitableInstallIcon,
+  permissionOrigins,
+  validateConfiguration,
+} from "../lib/config.js";
+import {
+  generatedIconSvg,
+  inferManifest,
+  normalizeSiteUrl,
+  originMatchPattern,
+  resolveImportedManifest,
+} from "../lib/site-discovery.js";
 
 const elements = {
   configurationList: document.querySelector("#configuration-list"),
@@ -28,6 +40,7 @@ elements.templateList.addEventListener("click", handleTemplateClick);
 document.querySelector("#active-tab-color-enabled").addEventListener("change", updateColorControl);
 document.querySelector("#active-tab-color").addEventListener("input", updateColorValue);
 document.querySelector("#active-tab-color-value").addEventListener("input", updateColorFromText);
+document.querySelector("#discover-site").addEventListener("click", discoverSite);
 
 await loadState();
 
@@ -155,6 +168,8 @@ function openEditor(configuration) {
   updateColorValue();
   document.querySelector("#manifest-json").value = JSON.stringify(value.manifest, null, 2);
   document.querySelector("#rules-json").value = JSON.stringify(value.rules, null, 2);
+  document.querySelector("#site-url").value = "";
+  setDiscoveryStatus("");
   elements.error.textContent = "";
   elements.dialog.showModal();
   document.querySelector("#configuration-name").focus();
@@ -237,6 +252,142 @@ function updateColorFromText() {
 
 function preferredDefaultColor(manifest) {
   return [manifest.background_color, manifest.theme_color].find((color) => /^#[\da-f]{6}$/i.test(color)) || "#ffffff";
+}
+
+async function discoverSite() {
+  const button = document.querySelector("#discover-site");
+  let url;
+  try {
+    url = normalizeSiteUrl(document.querySelector("#site-url").value);
+    document.querySelector("#site-url").value = url.href;
+  } catch (error) {
+    setDiscoveryStatus(error.message, true);
+    return;
+  }
+
+  const origin = originMatchPattern(url);
+  try {
+    if (!(await chrome.permissions.request({ origins: [origin] }))) {
+      setDiscoveryStatus("Site access is required to inspect this website.", true);
+      return;
+    }
+  } catch (error) {
+    setDiscoveryStatus(`Could not request site access: ${error.message}`, true);
+    return;
+  }
+
+  button.disabled = true;
+  button.textContent = "Importing…";
+  showDiscoveredIcon([]);
+  setDiscoveryStatus("Reading website metadata…");
+  try {
+    const pageResponse = await fetch(url.href);
+    if (!pageResponse.ok) throw new Error(`Website returned HTTP ${pageResponse.status}.`);
+    const pageUrl = pageResponse.url;
+    const pageDocument = new DOMParser().parseFromString(await pageResponse.text(), "text/html");
+    const baseHref = pageDocument.querySelector("base[href]")?.getAttribute("href");
+    const pageBaseUrl = baseHref ? new URL(baseHref, pageUrl).href : pageUrl;
+    const manifestLink = pageDocument.querySelector('link[rel~="manifest"][href]');
+    let manifest;
+    let importedExistingManifest = false;
+
+    if (manifestLink) {
+      const manifestUrl = new URL(manifestLink.getAttribute("href"), pageBaseUrl);
+      if (manifestUrl.origin !== new URL(pageUrl).origin) {
+        throw new Error("The manifest is hosted on another domain and needs separate site access.");
+      }
+      const manifestResponse = await fetch(manifestUrl.href);
+      if (!manifestResponse.ok) throw new Error(`Manifest returned HTTP ${manifestResponse.status}.`);
+      manifest = resolveImportedManifest(await manifestResponse.json(), manifestResponse.url);
+      importedExistingManifest = true;
+    } else {
+      manifest = inferManifest(pageUrl, extractMetadata(pageDocument, pageBaseUrl));
+    }
+
+    let generatedFallback = false;
+    if (!hasSuitableInstallIcon(manifest.icons)) {
+      manifest.icons = [...(Array.isArray(manifest.icons) ? manifest.icons : []), createGeneratedIcon(pageUrl)];
+      generatedFallback = true;
+    }
+
+    document.querySelector("#configuration-name").value =
+      manifest.name || manifest.short_name || new URL(pageUrl).hostname;
+    document.querySelector("#template-id").value = "";
+    document.querySelector("#match-patterns").value = originMatchPattern(pageUrl);
+    document.querySelector("#configuration-enabled").checked = false;
+    document.querySelector("#manifest-json").value = JSON.stringify(manifest, null, 2);
+    const defaultColor = preferredDefaultColor(manifest);
+    document.querySelector("#active-tab-color").value = defaultColor;
+    updateColorValue();
+
+    const iconMessage = generatedFallback
+      ? " Generated a fallback icon because the site did not provide an installable icon."
+      : "";
+    showDiscoveredIcon(manifest.icons, generatedFallback);
+    setDiscoveryStatus(
+      `${importedExistingManifest ? "Existing manifest imported." : "Draft built from page metadata."}${iconMessage} Review the values before saving.`,
+    );
+  } catch (error) {
+    setDiscoveryStatus(`Could not import website: ${error.message}`, true);
+  } finally {
+    button.disabled = false;
+    button.textContent = "Import website";
+  }
+}
+
+function extractMetadata(document, pageUrl) {
+  const content = (selector) => document.querySelector(selector)?.content?.trim() || "";
+  const name =
+    content('meta[name="application-name"]') ||
+    content('meta[name="apple-mobile-web-app-title"]') ||
+    content('meta[property="og:site_name"]') ||
+    document.title.trim();
+  const icons = [...document.querySelectorAll('link[rel~="icon"][href], link[rel="apple-touch-icon"][href]')]
+    .map((link) => ({
+      src: new URL(link.getAttribute("href"), pageUrl).href,
+      sizes: link.getAttribute("sizes") || "",
+      type: link.type || imageTypeFromUrl(link.getAttribute("href")),
+      purpose: "any",
+    }))
+    .filter((icon) => icon.sizes && icon.type);
+  return {
+    name,
+    shortName: content('meta[name="apple-mobile-web-app-title"]'),
+    description: content('meta[name="description"]') || content('meta[property="og:description"]'),
+    themeColor: content('meta[name="theme-color"]'),
+    icons,
+  };
+}
+
+function imageTypeFromUrl(url) {
+  const extension = new URL(url, "https://example.invalid").pathname.split(".").pop().toLowerCase();
+  return { png: "image/png", svg: "image/svg+xml", webp: "image/webp" }[extension] || "";
+}
+
+function createGeneratedIcon(siteUrl) {
+  return {
+    src: `data:image/svg+xml;base64,${btoa(generatedIconSvg(siteUrl))}`,
+    sizes: "any",
+    type: "image/svg+xml",
+    purpose: "any maskable",
+  };
+}
+
+function showDiscoveredIcon(icons, generated = false) {
+  const preview = document.querySelector("#discovered-icon");
+  const icon = generated
+    ? icons.at(-1)
+    : icons.find((value) => value.sizes?.split(/\s+/).includes("192x192")) || icons[0];
+  preview.src = icon?.src || "";
+  preview.hidden = !icon;
+  preview.alt = generated ? "Generated fallback icon" : "Discovered website icon";
+}
+
+function setDiscoveryStatus(message, error = false) {
+  const status = document.querySelector("#discovery-status");
+  status.textContent = message;
+  status.classList.toggle("error", error);
+  if (!message || error) showDiscoveredIcon([]);
 }
 
 async function handleConfigurationClick(event) {

@@ -76,6 +76,21 @@
         <input id="configuration-id" type="hidden" />
         <input id="template-id" type="hidden" />
         <div class="form-grid">
+          <section class="site-discovery full" aria-labelledby="site-discovery-title">
+            <div>
+              <strong id="site-discovery-title">Start from a website</strong>
+              <small>Import its manifest, or build a draft from page metadata.</small>
+            </div>
+            <div class="site-discovery-controls">
+              <label class="sr-only" for="site-url">Website URL</label>
+              <input id="site-url" type="url" placeholder="https://example.com" />
+              <button class="button quiet" id="discover-site" type="button">Import website</button>
+            </div>
+            <div class="discovery-result">
+              <img id="discovered-icon" alt="Generated fallback icon" hidden />
+              <p id="discovery-status" class="discovery-status" role="status" aria-live="polite"></p>
+            </div>
+          </section>
           <label class="field full">
             <span>Name</span>
             <input id="configuration-name" required autocomplete="off" />

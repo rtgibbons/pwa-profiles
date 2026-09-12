@@ -143,6 +143,17 @@ dialog::backdrop { background: rgb(15 25 19 / 55%); backdrop-filter: blur(3px); 
 .field input, .field textarea { background: #fbfcfa; border: 1px solid #cfd6cf; border-radius: 9px; color: var(--ink); padding: 11px 12px; resize: vertical; }
 .field small, .check-field small { color: var(--muted); font-size: 12px; }
 .code-field textarea { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; line-height: 1.55; tab-size: 2; }
+.site-discovery { background: #f0f6ee; border: 1px solid #cfdfcf; border-radius: 12px; display: grid; gap: 12px; padding: 16px; }
+.site-discovery strong { display: block; font-size: 14px; }
+.site-discovery small { color: var(--muted); display: block; font-size: 12px; margin-top: 3px; }
+.site-discovery-controls { display: flex; gap: 8px; }
+.site-discovery-controls input { background: white; border: 1px solid #c5d0c6; border-radius: 9px; min-width: 0; padding: 10px 12px; width: 100%; }
+.site-discovery-controls .button { flex-shrink: 0; }
+.discovery-result { align-items: center; display: flex; gap: 10px; }
+.discovery-result:has(.discovery-status:empty) { display: none; }
+.discovery-result img { border-radius: 10px; box-shadow: 0 2px 8px rgb(29 46 35 / 16%); flex: 0 0 auto; height: 44px; width: 44px; }
+.discovery-status { color: var(--muted); font-size: 12px; line-height: 1.45; margin: 0; min-height: 0; }
+.discovery-status.error { color: var(--danger); }
 .check-field { align-items: start; background: var(--surface-soft); border-radius: 10px; display: flex; gap: 10px; padding: 13px; }
 .check-field input { accent-color: var(--accent); margin-top: 3px; }
 .check-field span { display: flex; flex-direction: column; gap: 3px; }
@@ -170,6 +181,7 @@ dialog::backdrop { background: rgb(15 25 19 / 55%); backdrop-filter: blur(3px); 
   .search input { width: 100%; }
   .form-grid { grid-template-columns: 1fr; }
   .check-field { grid-column: 1 / -1; }
+  .site-discovery-controls { align-items: stretch; flex-direction: column; }
   .override-controls { grid-template-columns: 1fr; }
   #editor-form { padding: 23px; }
 }
