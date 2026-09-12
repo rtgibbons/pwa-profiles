@@ -1,31 +1,34 @@
-const promises = [];
-for (const icon of manifest.icons) {
-  if (icon.src.startsWith("chrome-extension://")) {
-    promises.push(
-      fetch(icon.src)
-        .then((response) => response.blob())
-        .then((blob) => {
-          return new Promise(function (resolve, reject) {
-            const reader = new FileReader();
+(async () => {
+  const response = await chrome.runtime.sendMessage({ type: "getConfigurationForPage" });
+  if (!response?.ok || !response.configuration) return;
 
-            reader.onloadend = function () {
-              resolve(reader.result);
-            };
+  const { id, manifest, replaceExistingManifest } = response.configuration;
+  const manifestUrl = `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}`;
 
-            reader.readAsDataURL(blob);
-          });
-        })
-        .then((dataUrl) => {
-          icon.src = dataUrl;
-        })
-    );
-  }
-}
-
-Promise.all(promises).then(() => {
+  if (replaceExistingManifest) removeOtherManifests(manifestUrl);
   const link = document.createElement("link");
   link.rel = "manifest";
-  link.href = `data:application/json;base64,${btoa(JSON.stringify(manifest))}`;
-
+  link.href = manifestUrl;
+  link.dataset.betterPwas = id;
   document.head.appendChild(link);
-});
+
+  if (replaceExistingManifest) {
+    new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        for (const node of mutation.addedNodes) {
+          if (node instanceof HTMLLinkElement && node.rel === "manifest" && node.href !== manifestUrl) {
+            node.remove();
+          }
+        }
+      }
+    }).observe(document.head, { childList: true });
+  }
+
+  await chrome.runtime.sendMessage({ type: "manifestInjected", configurationId: id });
+})().catch((error) => console.error("Better PWAs could not inject the manifest:", error));
+
+function removeOtherManifests(manifestUrl) {
+  document.querySelectorAll('link[rel="manifest"]').forEach((link) => {
+    if (link.href !== manifestUrl) link.remove();
+  });
+}

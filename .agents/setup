@@ -31,22 +31,11 @@ install_packages() {
 }
 
 validate_json() {
-  python3 - <<'PY'
-import json
-from pathlib import Path
-
-for path in (Path("manifest.json"), Path("rules/github.com.json")):
-    json.loads(path.read_text())
-    print(f"  ok {path}")
-PY
+  npm run check
 }
 
 check_javascript() {
-  local file
-  for file in background.js injectManifest.js replaceManifest.js manifests/*.js; do
-    node --check "$file"
-    log "  ok $file"
-  done
+  npm test
 }
 
 confirm_tools() {

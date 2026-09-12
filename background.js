@@ -1,248 +1,288 @@
-const ENABLED_ICON = "./images/icon48.png";
-const NEEDS_CSP_DISABLED_ICON = "./images/iconBlue48.png";
-const NEEDS_RELOAD_ICON = "./images/iconRed48.png";
-const CSP_DISABLED_ICON = "./images/iconRed48.png";
-const DISABLED_ICON = "./images/iconDisabled48.png";
+import {
+  CONFIGURATIONS_KEY,
+  SCHEMA_VERSION,
+  SCHEMA_VERSION_KEY,
+  configurationForUrl,
+  createConfiguration,
+  permissionOrigins,
+  validateConfiguration,
+} from "./lib/config.js";
 
-const ENABLED_TEXT = "Better PWA: Manifest updated";
-const NEEDS_CSP_DISABLED_TEXT =
-  "Better PWA: Replacement manifest available; click to disable CSP";
-const NEEDS_RELOAD_TEXT =
-  "Better PWA: CSP Disabled: reload page to replace manifest";
-const CSP_DISABLED_TEXT = "Better PWA: CSP Disabled; manifest replaced";
-const DISABLED_TEXT = "Better PWA: No betterment available";
+const CONTENT_SCRIPT_ID = "better-pwas-managed";
+const ENABLED_ICON = "images/icon48.png";
+const DISABLED_ICON = "images/iconDisabled48.png";
+const ENABLED_TEXT = "Better PWAs: replacement manifest active";
+const DISABLED_TEXT = "Better PWAs: no active configuration";
 
-const NEXT_ID_KEY = "nextNetRequestId";
-const RULE_KEY_PREFIX = "netRequestRule";
-const REPLACED_TABS_PREFIX = "replacedTabs";
+let reconciliation = Promise.resolve();
 
-const handledSites = [
-  {
-    url: "https://www.smh.com.au",
-  },
-  {
-    url: "https://app.slack.com",
-  },
-  {
-    url: "https://www.canva.com",
-  },
-  {
-    url: "https://github.com",
-    needsCSPDisabled: true,
-    js: ["manifests/github.com.js", "replaceManifest.js"],
-    matches: ["https://github.com/*"],
-  },
-];
-
-async function getHasTabBeenReplaced(url, tabId) {
-  const tabsKey = `${REPLACED_TABS_PREFIX}${url}`;
-  const values = await chrome.storage.session.get(tabsKey);
-  if (values && values[tabsKey] !== undefined) {
-    const tabs = values[tabsKey];
-    return tabs.includes(tabId);
-  }
-
-  return false;
-}
-
-async function setTabBasBeenReplaced(url, tabId) {
-  const tabsKey = `${REPLACED_TABS_PREFIX}${url}`;
-  const values = await chrome.storage.session.get(tabsKey);
-  let tabs;
-  if (values && values[tabsKey] !== undefined) {
-    tabs = values[tabsKey];
-  } else {
-    tabs = [];
-  }
-  tabs.push(tabId);
-  values[tabsKey] = tabs;
-  chrome.storage.session.set(values);
-}
-
-async function clearReplacedTabs(url) {
-  const tabsKey = `${REPLACED_TABS_PREFIX}${url}`;
-  const values = await chrome.storage.session.get(tabsKey);
-  const tabs = [];
-  values[tabsKey] = tabs;
-  chrome.storage.session.set(values);
-}
-
-async function getRuleIdIfExists(url) {
-  const ruleIdKey = `${RULE_KEY_PREFIX}${url}`;
-  const value = await chrome.storage.session.get(ruleIdKey);
-  if (value && value[ruleIdKey] !== undefined) {
-    return value[ruleIdKey];
-  }
-
-  return null;
-}
-
-function setRuleId(url, id) {
-  const ruleIdKey = `${RULE_KEY_PREFIX}${url}`;
-  const value = {
-    [ruleIdKey]: id,
-  };
-  chrome.storage.session.set(value);
-}
-
-function clearRuleId(url) {
-  const ruleIdKey = `${RULE_KEY_PREFIX}${url}`;
-  chrome.storage.session.remove(ruleIdKey);
-}
-
-async function getNextId() {
-  const value = await chrome.storage.session.get(NEXT_ID_KEY);
-  let id = 1;
-  if (value && value.nextNetRequestId) {
-    id = Number(value.nextNetRequestId);
-  }
-  await chrome.storage.session.set({
-    nextNetRequestId: id + 1,
-  });
-  return id;
-}
-
-function enableCSPBlock(url, id) {
-  console.log(`Enabling ${id} for ${url}`);
-  chrome.declarativeNetRequest.updateSessionRules({
-    addRules: [
-      {
-        action: {
-          type: "modifyHeaders",
-          responseHeaders: [
-            { header: "content-security-policy", operation: "remove" },
-          ],
-        },
-        condition: {
-          urlFilter: "||github.com/",
-          resourceTypes: ["main_frame"],
-        },
-        id,
-      },
-    ],
-  });
-}
-
-function enableContentScript(url, matches, js) {
-  chrome.scripting.registerContentScripts([
-    {
-      id: url,
-      js,
-      persistAcrossSessions: false,
-      matches,
-      runAt: "document_end",
-    },
-  ]);
-}
-
-function disableCSPBlock(id) {
-  const numberId = Number(id);
-  chrome.declarativeNetRequest.updateSessionRules({
-    removeRuleIds: [numberId],
-  });
-}
-
-function disableContentScript(url) {
-  chrome.scripting.unregisterContentScripts({
-    ids: [url],
-  });
-}
-
-function siteForTab(tab) {
-  return handledSites.find((site) => tab.url.startsWith(site.url));
-}
-
-chrome.action.onClicked.addListener((tab) => {
-  const site = siteForTab(tab);
-  if (site && site.needsCSPDisabled) {
-    getRuleIdIfExists(site.url).then((id) => {
-      if (id !== null) {
-        disableCSPBlock(id);
-        disableContentScript(site.url);
-        clearRuleId(site.url);
-        clearReplacedTabs(site.url);
-        updateForTab(tab, "NEEDS_CSP_DISABLED");
-      } else {
-        getNextId().then((id) => {
-          console.log(`storing ${id}`);
-          setRuleId(site.url, id);
-          enableCSPBlock(site.url, id);
-          enableContentScript(site.url, site.matches, site.js);
-          updateForTab(tab, "NEEDS_RELOAD");
-        });
-      }
-    });
-  }
+chrome.runtime.onInstalled.addListener(() => queueReconciliation());
+chrome.runtime.onStartup.addListener(() => queueReconciliation());
+chrome.storage.onChanged.addListener((changes, area) => {
+  if (area === "local" && changes[CONFIGURATIONS_KEY]) queueReconciliation();
 });
 
-function setBadgeIconAndTitle(iconPath, title, tabId) {
-  chrome.action.setIcon({ path: { 48: iconPath }, tabId });
-  chrome.action.setTitle({ title, tabId });
-}
+chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
-function updateForTab(tab, updateTo) {
-  const site = siteForTab(tab);
-  if (site) {
-    if (site.needsCSPDisabled) {
-      if (updateTo !== undefined) {
-        switch (updateTo) {
-          case "NEEDS_CSP_DISABLED":
-            setBadgeIconAndTitle(
-              NEEDS_CSP_DISABLED_ICON,
-              NEEDS_CSP_DISABLED_TEXT,
-              tab.id
-            );
-            return;
-          case "NEEDS_RELOAD":
-            setBadgeIconAndTitle(NEEDS_RELOAD_ICON, NEEDS_RELOAD_TEXT, tab.id);
-            return;
-          case "CSP_DISABLED":
-            setBadgeIconAndTitle(CSP_DISABLED_ICON, CSP_DISABLED_TEXT, tab.id);
-            return;
+chrome.tabs.onActivated.addListener(({ tabId }) => {
+  chrome.tabs.get(tabId).then(updateActionForTab).catch(() => {});
+});
+chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
+  if (changeInfo.url || changeInfo.status === "complete") updateActionForTab(tab);
+});
+
+chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+  handleMessage(message, sender).then(sendResponse).catch((error) => {
+    sendResponse({ ok: false, error: error.message });
+  });
+  return true;
+});
+
+queueReconciliation();
+
+async function handleMessage(message, sender) {
+  switch (message?.type) {
+    case "getState":
+      assertManagementSender(sender);
+      return {
+        ok: true,
+        templates: await loadTemplates(),
+        configurations: await getConfigurations(),
+      };
+    case "saveConfiguration":
+      assertManagementSender(sender);
+      return saveConfiguration(message.configuration);
+    case "deleteConfiguration":
+      assertManagementSender(sender);
+      return deleteConfiguration(message.id);
+    case "replaceConfigurations":
+      assertManagementSender(sender);
+      return replaceConfigurations(message.configurations);
+    case "getConfigurationForPage":
+      if (!sender.tab?.url) return { ok: false, error: "Page URL is unavailable." };
+      return getConfigurationForPage(sender.tab.url);
+    case "manifestInjected":
+      if (sender.tab?.id && sender.tab.url) {
+        const configuration = configurationForUrl(await getConfigurations(), sender.tab.url);
+        if (configuration?.id === message.configurationId) {
+          await setAction(ENABLED_ICON, ENABLED_TEXT, sender.tab.id);
         }
       }
-      getRuleIdIfExists(site.url).then((id) => {
-        if (id) {
-          getHasTabBeenReplaced(site.url, tab.id).then((replaced) => {
-            if (!replaced) {
-              setBadgeIconAndTitle(
-                NEEDS_RELOAD_ICON,
-                NEEDS_RELOAD_TEXT,
-                tab.id
-              );
-              return;
-            }
-            setBadgeIconAndTitle(CSP_DISABLED_ICON, CSP_DISABLED_TEXT, tab.id);
-          });
-          return;
-        }
-        setBadgeIconAndTitle(
-          NEEDS_CSP_DISABLED_ICON,
-          NEEDS_CSP_DISABLED_TEXT,
-          tab.id
-        );
-      });
-      return;
+      return { ok: true };
+    default:
+      return { ok: false, error: "Unknown request." };
+  }
+}
+
+function assertManagementSender(sender) {
+  if (!sender.url?.startsWith(chrome.runtime.getURL(""))) {
+    throw new Error("This request is only available from the settings page.");
+  }
+}
+
+async function loadTemplates() {
+  const catalog = await fetch(chrome.runtime.getURL("templates/catalog.json")).then((response) => {
+    if (!response.ok) throw new Error("Could not load the template catalog.");
+    return response.json();
+  });
+
+  return Promise.all(
+    catalog.templates.map(async (template) => ({
+      ...template,
+      replaceExistingManifest: template.replaceExistingManifest !== false,
+      rules: template.rules ?? [],
+      manifest: await fetch(chrome.runtime.getURL(template.manifestPath)).then((response) => {
+        if (!response.ok) throw new Error(`Could not load ${template.manifestPath}.`);
+        return response.json();
+      }),
+    })),
+  );
+}
+
+async function getConfigurations() {
+  const stored = await chrome.storage.local.get([CONFIGURATIONS_KEY, SCHEMA_VERSION_KEY]);
+  if (Array.isArray(stored[CONFIGURATIONS_KEY])) {
+    if (stored[SCHEMA_VERSION_KEY] !== SCHEMA_VERSION) {
+      await chrome.storage.local.set({ [SCHEMA_VERSION_KEY]: SCHEMA_VERSION });
     }
-    setBadgeIconAndTitle(ENABLED_ICON, ENABLED_TEXT, tab.id);
+    return stored[CONFIGURATIONS_KEY];
+  }
+
+  const templates = await loadTemplates();
+  const configurations = templates
+    .filter((template) => template.enabledByDefault)
+    .map((template) => createConfiguration(template, `default-${template.id}`));
+  await chrome.storage.local.set({
+    [CONFIGURATIONS_KEY]: configurations,
+    [SCHEMA_VERSION_KEY]: SCHEMA_VERSION,
+  });
+  return configurations;
+}
+
+async function saveConfiguration(configuration) {
+  const errors = validateConfiguration(configuration);
+  if (errors.length) return { ok: false, error: errors.join(" ") };
+
+  const configurations = await getConfigurations();
+  const index = configurations.findIndex((item) => item.id === configuration.id);
+  const value = {
+    ...structuredClone(configuration),
+    id: configuration.id || crypto.randomUUID(),
+    templateId: configuration.templateId ?? null,
+    createdAt: configuration.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  };
+  if (index === -1) configurations.push(value);
+  else configurations[index] = value;
+  await chrome.storage.local.set({ [CONFIGURATIONS_KEY]: configurations });
+  return { ok: true, configuration: value };
+}
+
+async function deleteConfiguration(id) {
+  const configurations = (await getConfigurations()).filter((item) => item.id !== id);
+  await chrome.storage.local.set({ [CONFIGURATIONS_KEY]: configurations });
+  return { ok: true };
+}
+
+async function replaceConfigurations(configurations) {
+  if (!Array.isArray(configurations)) return { ok: false, error: "Import must contain an array." };
+  const errors = configurations.flatMap((configuration, index) =>
+    validateConfiguration(configuration).map((error) => `Configuration ${index + 1}: ${error}`),
+  );
+  if (errors.length) return { ok: false, error: errors.join(" ") };
+
+  const imported = configurations.map((configuration) => ({
+    ...structuredClone(configuration),
+    id: configuration.id || crypto.randomUUID(),
+    enabled: false,
+    createdAt: configuration.createdAt || new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  }));
+  await chrome.storage.local.set({ [CONFIGURATIONS_KEY]: imported });
+  return { ok: true };
+}
+
+async function getConfigurationForPage(url) {
+  const configuration = configurationForUrl(await getConfigurations(), url);
+  if (!configuration) return { ok: true, configuration: null };
+  const manifest = resolveManifestUrls(configuration.manifest, url);
+  await inlineExtensionImages(manifest);
+  return {
+    ok: true,
+    configuration: {
+      id: configuration.id,
+      replaceExistingManifest: configuration.replaceExistingManifest,
+      manifest,
+    },
+  };
+}
+
+function resolveManifestUrls(manifest, pageUrl) {
+  const resolved = structuredClone(manifest);
+  const pageOrigin = new URL("/", pageUrl);
+  const resolve = (value) => {
+    if (typeof value !== "string" || /^(data:|blob:|https?:|chrome-extension:)/.test(value)) {
+      return value;
+    }
+    if (value.startsWith("icons/")) return chrome.runtime.getURL(`manifests/${value}`);
+    return new URL(value, pageOrigin).href;
+  };
+  const visit = (value) => {
+    if (Array.isArray(value)) return value.forEach(visit);
+    if (!value || typeof value !== "object") return;
+    for (const [key, child] of Object.entries(value)) {
+      if (["src", "url", "action"].includes(key)) value[key] = resolve(child);
+      else visit(child);
+    }
+  };
+  if (resolved.start_url) resolved.start_url = resolve(resolved.start_url);
+  if (resolved.scope) resolved.scope = resolve(resolved.scope);
+  if (resolved.id && !/^[a-z][a-z\d+.-]*:/i.test(resolved.id)) resolved.id = resolve(resolved.id);
+  visit(resolved);
+  return resolved;
+}
+
+async function inlineExtensionImages(value) {
+  if (Array.isArray(value)) {
+    await Promise.all(value.map(inlineExtensionImages));
     return;
   }
+  if (!value || typeof value !== "object") return;
 
-  setBadgeIconAndTitle(DISABLED_ICON, DISABLED_TEXT, tab.id);
+  if (typeof value.src === "string" && value.src.startsWith(chrome.runtime.getURL(""))) {
+    const response = await fetch(value.src);
+    if (!response.ok) throw new Error(`Could not load bundled image: ${value.src}`);
+    const blob = await response.blob();
+    const bytes = new Uint8Array(await blob.arrayBuffer());
+    let binary = "";
+    for (let offset = 0; offset < bytes.length; offset += 32768) {
+      binary += String.fromCharCode(...bytes.subarray(offset, offset + 32768));
+    }
+    value.src = `data:${blob.type};base64,${btoa(binary)}`;
+  }
+  await Promise.all(Object.values(value).map(inlineExtensionImages));
 }
 
-chrome.tabs.onUpdated.addListener((tabId, changedebug, tab) => {
-  updateForTab(tab);
-});
+function queueReconciliation() {
+  reconciliation = reconciliation.then(reconcile).catch((error) => console.error(error));
+  return reconciliation;
+}
 
-chrome.tabs.onActivated.addListener((activeInfo) => {
-  chrome.tabs.get(activeInfo.tabId).then((tab) => updateForTab(tab));
-});
-
-chrome.runtime.onMessage.addListener((request, sender) => {
-  if (request.type === "manifestInjected") {
-    const site = siteForTab(sender.tab);
-    setTabBasBeenReplaced(site.url, sender.tab.id);
-    updateForTab(sender.tab, "CSP_DISABLED");
+async function reconcile() {
+  const configurations = await getConfigurations();
+  const enabled = [];
+  for (const configuration of configurations.filter((item) => item.enabled)) {
+    if (await chrome.permissions.contains({ origins: permissionOrigins(configuration.matchPatterns) })) {
+      enabled.push(configuration);
+    }
   }
-});
+
+  const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [CONTENT_SCRIPT_ID] });
+  if (existing.length) await chrome.scripting.unregisterContentScripts({ ids: [CONTENT_SCRIPT_ID] });
+  const matches = [...new Set(enabled.flatMap((configuration) => configuration.matchPatterns))];
+  if (matches.length) {
+    await chrome.scripting.registerContentScripts([
+      {
+        id: CONTENT_SCRIPT_ID,
+        js: ["injectManifest.js"],
+        matches,
+        persistAcrossSessions: true,
+        runAt: "document_end",
+      },
+    ]);
+  }
+
+  const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
+  const rules = enabled.flatMap((configuration) =>
+    configuration.rules
+      .filter((rule) => rule.enabled !== false)
+      .map((rule) => {
+        const { name: _name, enabled: _enabled, id: _id, ...declarativeRule } = rule;
+        return declarativeRule;
+      }),
+  );
+  await chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: oldRules.map((rule) => rule.id),
+    addRules: rules.map((rule, index) => ({ ...rule, id: index + 1 })),
+  });
+}
+
+async function updateActionForTab(tab) {
+  if (!tab?.id || !tab.url) return;
+  const configuration = configurationForUrl(await getConfigurations(), tab.url);
+  const hasAccess =
+    configuration &&
+    (await chrome.permissions.contains({ origins: permissionOrigins(configuration.matchPatterns) }));
+  await setAction(
+    hasAccess ? ENABLED_ICON : DISABLED_ICON,
+    hasAccess ? `Better PWAs: ${configuration.name} configured` : DISABLED_TEXT,
+    tab.id,
+  );
+}
+
+function setAction(icon, title, tabId) {
+  return Promise.all([
+    chrome.action.setIcon({ path: { 48: icon }, tabId }),
+    chrome.action.setTitle({ title, tabId }),
+  ]);
+}

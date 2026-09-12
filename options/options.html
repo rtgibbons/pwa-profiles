@@ -1,0 +1,123 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Better PWAs settings</title>
+    <link rel="stylesheet" href="options.css" />
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="#configurations" aria-label="Better PWAs settings">
+        <img src="../images/icon128.png" alt="" />
+        <span>Better PWAs</span>
+      </a>
+      <nav aria-label="Settings sections">
+        <a href="#configurations">Configurations</a>
+        <a href="#templates">Templates</a>
+      </nav>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="page-title">
+        <div>
+          <p class="eyebrow">Extension settings</p>
+          <h1 id="page-title">Make the web feel more native.</h1>
+          <p class="hero-copy">
+            Choose where Better PWAs runs, customize each web app manifest, and manage its network
+            rules—all stored locally in your browser.
+          </p>
+        </div>
+        <button class="button primary" id="new-configuration" type="button">New configuration</button>
+      </section>
+
+      <section id="configurations" class="section" aria-labelledby="configurations-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Your browser</p>
+            <h2 id="configurations-title">Configurations</h2>
+            <p>Enabled configurations run only on the sites you approve.</p>
+          </div>
+          <div class="toolbar">
+            <button class="button quiet" id="import" type="button">Import</button>
+            <button class="button quiet" id="export" type="button">Export</button>
+            <input id="import-file" type="file" accept="application/json,.json" hidden />
+          </div>
+        </div>
+        <div id="configuration-list" class="card-grid" aria-live="polite"></div>
+      </section>
+
+      <section id="templates" class="section templates-section" aria-labelledby="templates-title">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Read-only starting points</p>
+            <h2 id="templates-title">Template library</h2>
+            <p>Using a template creates your own editable copy. The bundled original never changes.</p>
+          </div>
+          <label class="search">
+            <span class="sr-only">Search templates</span>
+            <input id="template-search" type="search" placeholder="Search templates" />
+          </label>
+        </div>
+        <div id="template-list" class="card-grid"></div>
+      </section>
+    </main>
+
+    <dialog id="editor">
+      <form id="editor-form" method="dialog">
+        <div class="dialog-heading">
+          <div>
+            <p class="eyebrow">Configuration</p>
+            <h2 id="editor-title">New configuration</h2>
+          </div>
+          <button class="icon-button" id="close-editor" type="button" aria-label="Close">×</button>
+        </div>
+
+        <input id="configuration-id" type="hidden" />
+        <input id="template-id" type="hidden" />
+        <div class="form-grid">
+          <label class="field full">
+            <span>Name</span>
+            <input id="configuration-name" required autocomplete="off" />
+          </label>
+          <label class="field full">
+            <span>Site match patterns</span>
+            <textarea id="match-patterns" rows="3" required spellcheck="false"></textarea>
+            <small>One Chrome match pattern per line, such as https://example.com/*</small>
+          </label>
+          <label class="check-field">
+            <input id="configuration-enabled" type="checkbox" />
+            <span>
+              <strong>Enabled</strong>
+              <small>Run on approved matching sites.</small>
+            </span>
+          </label>
+          <label class="check-field">
+            <input id="replace-manifest" type="checkbox" />
+            <span>
+              <strong>Replace existing manifest</strong>
+              <small>Remove manifest links added by the site.</small>
+            </span>
+          </label>
+          <label class="field full code-field">
+            <span>Web app manifest (JSON)</span>
+            <textarea id="manifest-json" rows="15" required spellcheck="false"></textarea>
+          </label>
+          <label class="field full code-field">
+            <span>Network rules (JSON)</span>
+            <textarea id="rules-json" rows="10" required spellcheck="false"></textarea>
+            <small>Declarative Net Request rules. IDs are assigned automatically.</small>
+          </label>
+        </div>
+        <p id="form-error" class="form-error" role="alert"></p>
+        <div class="dialog-actions">
+          <button class="button quiet" id="cancel-editor" type="button">Cancel</button>
+          <button class="button primary" type="submit">Save configuration</button>
+        </div>
+      </form>
+    </dialog>
+
+    <div id="status" class="toast" role="status" aria-live="polite"></div>
+    <script type="module" src="options.js"></script>
+  </body>
+</html>
