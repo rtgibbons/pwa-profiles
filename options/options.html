@@ -147,6 +147,31 @@
             </div>
           </fieldset>
           <fieldset class="override-field full">
+            <legend>Manifest appearance</legend>
+            <div class="override-controls">
+              <label class="check-field">
+                <input id="theme-color-enabled" type="checkbox" />
+                <span>
+                  <strong>Set theme color</strong>
+                  <small>Color the app window and surrounding browser UI.</small>
+                </span>
+              </label>
+              <div class="color-field">
+                <label for="manifest-theme-color">Theme color</label>
+                <input id="manifest-theme-color" type="color" value="#ffffff" disabled />
+                <input
+                  id="manifest-theme-color-value"
+                  class="color-value"
+                  aria-label="Manifest theme color hexadecimal value"
+                  pattern="#[0-9a-fA-F]{6}"
+                  value="#ffffff"
+                  disabled
+                />
+              </div>
+            </div>
+            <small id="theme-color-note">Updates the manifest's theme_color value.</small>
+          </fieldset>
+          <fieldset class="override-field full">
             <legend>Advanced appearance</legend>
             <div class="override-controls">
               <label class="check-field">
@@ -158,6 +183,10 @@
               </label>
               <div class="color-field">
                 <label for="active-tab-color">Canvas color</label>
+                <label class="auto-color">
+                  <input id="active-tab-color-auto" type="checkbox" disabled />
+                  Auto from theme
+                </label>
                 <input id="active-tab-color" type="color" value="#ffffff" disabled />
                 <input
                   id="active-tab-color-value"
@@ -169,7 +198,7 @@
                 />
               </div>
             </div>
-            <small>
+            <small id="active-tab-color-note">
               Applied to the root HTML element as a user-origin style. The color may appear in
               overscroll or gaps on pages that do not cover the full viewport.
             </small>

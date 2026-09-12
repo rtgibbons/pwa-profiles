@@ -1,9 +1,13 @@
 import {
   createConfiguration,
+  derivedActiveTabColor,
+  editableHexColor,
   hasSuitableInstallIcon,
   permissionOrigins,
+  resolvedActiveTabColor,
   validateConfiguration,
   withDisplayPreferences,
+  withThemeColor,
 } from "../lib/config.js";
 import {
   generatedIconSvg,
@@ -39,6 +43,7 @@ elements.configurationList.addEventListener("click", handleConfigurationClick);
 elements.configurationList.addEventListener("change", handleConfigurationToggle);
 elements.templateList.addEventListener("click", handleTemplateClick);
 document.querySelector("#active-tab-color-enabled").addEventListener("change", updateColorControl);
+document.querySelector("#active-tab-color-auto").addEventListener("change", updateColorControl);
 document.querySelector("#active-tab-color").addEventListener("input", updateColorValue);
 document.querySelector("#active-tab-color-value").addEventListener("input", updateColorFromText);
 document.querySelector("#discover-site").addEventListener("click", discoverSite);
@@ -46,7 +51,10 @@ document.querySelector("#manifest-display").addEventListener("change", () => upd
 document
   .querySelector("#manifest-display-override")
   .addEventListener("change", () => updateManifestDisplay("override"));
-document.querySelector("#manifest-json").addEventListener("input", syncDisplayControlsFromJson);
+document.querySelector("#manifest-json").addEventListener("input", syncManifestControlsFromJson);
+document.querySelector("#theme-color-enabled").addEventListener("change", updateManifestThemeColor);
+document.querySelector("#manifest-theme-color").addEventListener("input", updateThemeColorValue);
+document.querySelector("#manifest-theme-color-value").addEventListener("input", updateThemeColorFromText);
 
 await loadState();
 
@@ -97,8 +105,10 @@ function renderConfigurations() {
       ),
       pill(configuration.replaceExistingManifest ? "Replaces manifest" : "Adds manifest"),
     );
-    if (configuration.pageOverrides?.activeTabColor) {
-      meta.append(pill(`Tab ${configuration.pageOverrides.activeTabColor.toUpperCase()}`));
+    const tabColor = resolvedActiveTabColor(configuration);
+    if (tabColor) {
+      const label = configuration.pageOverrides?.activeTabColorMode === "theme" ? "Tab auto" : "Tab";
+      meta.append(pill(`${label} ${tabColor.toUpperCase()}`));
     }
     const actions = div("card-actions");
     const source = document.createElement("span");
@@ -166,14 +176,17 @@ function openEditor(configuration) {
   document.querySelector("#match-patterns").value = value.matchPatterns.join("\n");
   document.querySelector("#configuration-enabled").checked = value.enabled;
   document.querySelector("#replace-manifest").checked = value.replaceExistingManifest;
+  document.querySelector("#manifest-json").value = JSON.stringify(value.manifest, null, 2);
   const activeTabColor = value.pageOverrides?.activeTabColor;
+  const autoActiveTabColor = value.pageOverrides?.activeTabColorMode === "theme";
   const colorInput = document.querySelector("#active-tab-color");
-  document.querySelector("#active-tab-color-enabled").checked = Boolean(activeTabColor);
-  colorInput.value = activeTabColor || preferredDefaultColor(value.manifest);
+  document.querySelector("#active-tab-color-enabled").checked = Boolean(activeTabColor || autoActiveTabColor);
+  document.querySelector("#active-tab-color-auto").checked = autoActiveTabColor;
+  colorInput.value = resolvedActiveTabColor(value) || preferredDefaultColor(value.manifest);
   updateColorControl();
   updateColorValue();
-  document.querySelector("#manifest-json").value = JSON.stringify(value.manifest, null, 2);
   syncDisplayControls(value.manifest);
+  syncThemeColorControls(value.manifest);
   document.querySelector("#rules-json").value = JSON.stringify(value.rules, null, 2);
   document.querySelector("#site-url").value = "";
   setDiscoveryStatus("");
@@ -206,9 +219,16 @@ async function saveEditor(event) {
       replaceExistingManifest: document.querySelector("#replace-manifest").checked,
       pageOverrides: {
         ...(existing?.pageOverrides ?? {}),
-        activeTabColor: document.querySelector("#active-tab-color-enabled").checked
+        activeTabColor:
+          document.querySelector("#active-tab-color-enabled").checked &&
+          !document.querySelector("#active-tab-color-auto").checked
           ? document.querySelector("#active-tab-color").value
           : null,
+        activeTabColorMode:
+          document.querySelector("#active-tab-color-enabled").checked &&
+          document.querySelector("#active-tab-color-auto").checked
+            ? "theme"
+            : null,
       },
       manifest: JSON.parse(document.querySelector("#manifest-json").value),
       rules: JSON.parse(document.querySelector("#rules-json").value),
@@ -236,9 +256,14 @@ async function saveEditor(event) {
 }
 
 function updateColorControl() {
-  const disabled = !document.querySelector("#active-tab-color-enabled").checked;
-  document.querySelector("#active-tab-color").disabled = disabled;
-  document.querySelector("#active-tab-color-value").disabled = disabled;
+  const enabled = document.querySelector("#active-tab-color-enabled").checked;
+  const auto = document.querySelector("#active-tab-color-auto");
+  if (!enabled) auto.checked = false;
+  auto.disabled = !enabled;
+  const manualDisabled = !enabled || auto.checked;
+  document.querySelector("#active-tab-color").disabled = manualDisabled;
+  document.querySelector("#active-tab-color-value").disabled = manualDisabled;
+  updateActiveTabColorPreview();
 }
 
 function updateColorValue() {
@@ -254,6 +279,30 @@ function updateColorFromText() {
     valueInput.setCustomValidity("");
   } else {
     valueInput.setCustomValidity("Enter a six-digit hexadecimal color such as #232F3E.");
+  }
+}
+
+function updateActiveTabColorPreview() {
+  const note = document.querySelector("#active-tab-color-note");
+  if (!document.querySelector("#active-tab-color-auto").checked) {
+    note.textContent =
+      "Applied to the root HTML element as a user-origin style. The color may appear in overscroll or gaps on pages that do not cover the full viewport.";
+    return;
+  }
+  try {
+    const manifest = JSON.parse(document.querySelector("#manifest-json").value);
+    const color = derivedActiveTabColor(manifest.theme_color);
+    if (!color) {
+      note.textContent = "Automatic color requires a hexadecimal manifest theme color.";
+      return;
+    }
+    document.querySelector("#active-tab-color").value = color;
+    const value = document.querySelector("#active-tab-color-value");
+    value.value = color;
+    value.setCustomValidity("");
+    note.textContent = `Derived ${color.toUpperCase()} from ${editableHexColor(manifest.theme_color).toUpperCase()} using Chromium's 1.3 contrast target.`;
+  } catch {
+    note.textContent = "Fix the manifest JSON to calculate an automatic active tab color.";
   }
 }
 
@@ -280,9 +329,11 @@ function updateManifestDisplay(field) {
   }
 }
 
-function syncDisplayControlsFromJson() {
+function syncManifestControlsFromJson() {
   try {
-    syncDisplayControls(JSON.parse(document.querySelector("#manifest-json").value));
+    const manifest = JSON.parse(document.querySelector("#manifest-json").value);
+    syncDisplayControls(manifest);
+    syncThemeColorControls(manifest);
   } catch {}
 }
 
@@ -304,6 +355,65 @@ function setDisplaySelect(select, value) {
   const custom = select.querySelector(".custom-option");
   custom.textContent = `Custom: ${value}`;
   select.value = custom.value;
+}
+
+function updateManifestThemeColor() {
+  try {
+    const manifest = JSON.parse(document.querySelector("#manifest-json").value);
+    const themeColor = document.querySelector("#theme-color-enabled").checked
+      ? document.querySelector("#manifest-theme-color").value
+      : null;
+    const updated = withThemeColor(manifest, themeColor);
+    document.querySelector("#manifest-json").value = JSON.stringify(updated, null, 2);
+    syncThemeColorControls(updated);
+    elements.error.textContent = "";
+  } catch (error) {
+    elements.error.textContent = `Fix the manifest JSON before changing its theme color: ${error.message}`;
+  }
+}
+
+function updateThemeColorValue() {
+  const picker = document.querySelector("#manifest-theme-color");
+  const value = document.querySelector("#manifest-theme-color-value");
+  value.value = picker.value;
+  value.setCustomValidity("");
+  updateManifestThemeColor();
+}
+
+function updateThemeColorFromText() {
+  const value = document.querySelector("#manifest-theme-color-value");
+  const color = editableHexColor(value.value);
+  if (!color) {
+    value.setCustomValidity("Enter a hexadecimal color such as #232F3E.");
+    return;
+  }
+  value.value = color;
+  value.setCustomValidity("");
+  document.querySelector("#manifest-theme-color").value = color;
+  updateManifestThemeColor();
+}
+
+function syncThemeColorControls(manifest) {
+  const enabled = typeof manifest.theme_color === "string" && manifest.theme_color.length > 0;
+  const color = editableHexColor(manifest.theme_color);
+  const picker = document.querySelector("#manifest-theme-color");
+  const value = document.querySelector("#manifest-theme-color-value");
+  document.querySelector("#theme-color-enabled").checked = enabled;
+  picker.disabled = !enabled;
+  value.disabled = !enabled;
+  if (color) {
+    picker.value = color;
+    value.value = color;
+  } else {
+    picker.value = "#ffffff";
+    value.value = "#ffffff";
+  }
+  value.setCustomValidity("");
+  document.querySelector("#theme-color-note").textContent =
+    enabled && !color
+      ? `The custom value “${manifest.theme_color}” is preserved in JSON. Choose a color to replace it.`
+      : "Updates the manifest's theme_color value.";
+  updateActiveTabColorPreview();
 }
 
 async function discoverSite() {
@@ -369,9 +479,11 @@ async function discoverSite() {
     document.querySelector("#configuration-enabled").checked = false;
     document.querySelector("#manifest-json").value = JSON.stringify(manifest, null, 2);
     syncDisplayControls(manifest);
+    syncThemeColorControls(manifest);
     const defaultColor = preferredDefaultColor(manifest);
     document.querySelector("#active-tab-color").value = defaultColor;
-    updateColorValue();
+    updateColorControl();
+    if (!document.querySelector("#active-tab-color-auto").checked) updateColorValue();
 
     const iconMessage = generatedFallback
       ? " Generated a fallback icon because the site did not provide an installable icon."

@@ -5,12 +5,16 @@ import {
   activeTabColorOverrideCss,
   configurationForUrl,
   createConfiguration,
+  derivedActiveTabColor,
+  editableHexColor,
   hasSuitableInstallIcon,
   patternMatchesUrl,
   permissionOrigins,
+  resolvedActiveTabColor,
   validateConfiguration,
   validateMatchPattern,
   withDisplayPreferences,
+  withThemeColor,
 } from "../lib/config.js";
 
 test("match patterns distinguish schemes, hosts, subdomains, paths, and queries", () => {
@@ -78,6 +82,37 @@ test("active tab color overrides accept only safe hex colors", () => {
   );
 });
 
+test("automatic active tab colors use Chromium's minimum contrast transformation", () => {
+  assert.equal(derivedActiveTabColor("#FF9900"), "#de8500");
+  assert.equal(derivedActiveTabColor("#523520"), "#624734");
+  assert.equal(derivedActiveTabColor("#fff"), "#e1e1e1");
+  assert.equal(derivedActiveTabColor("rgb(1, 2, 3)"), null);
+  const configuration = {
+    manifest: { theme_color: "#FF9900" },
+    pageOverrides: { activeTabColorMode: "theme" },
+  };
+  assert.equal(resolvedActiveTabColor(configuration), "#de8500");
+  assert.equal(
+    activeTabColorOverrideCss(configuration),
+    "html { background-color: #de8500 !important; }",
+  );
+  assert.deepEqual(
+    validateConfiguration({
+      name: "Example",
+      matchPatterns: ["https://example.com/*"],
+      manifest: {
+        name: "Example",
+        start_url: "/",
+        theme_color: "red",
+        icons: [{ src: "icon.svg", sizes: "any", type: "image/svg+xml" }],
+      },
+      rules: [],
+      pageOverrides: { activeTabColorMode: "theme" },
+    }),
+    ["Automatic active tab color requires a hexadecimal manifest theme color."],
+  );
+});
+
 test("display preferences preserve the manifest and replace or remove overrides", () => {
   const manifest = { name: "Example", display: "standalone", display_override: ["tabbed", "minimal-ui"] };
   assert.deepEqual(withDisplayPreferences(manifest, "minimal-ui", "window-controls-overlay"), {
@@ -90,6 +125,20 @@ test("display preferences preserve the manifest and replace or remove overrides"
     display: "browser",
   });
   assert.deepEqual(manifest.display_override, ["tabbed", "minimal-ui"]);
+});
+
+test("theme color controls normalize hex colors and preserve other manifest fields", () => {
+  assert.equal(editableHexColor("#AbC"), "#aabbcc");
+  assert.equal(editableHexColor("#12abEF"), "#12abef");
+  assert.equal(editableHexColor("rgb(1, 2, 3)"), null);
+  const manifest = { name: "Example", theme_color: "red", display: "standalone" };
+  assert.deepEqual(withThemeColor(manifest, "#123456"), {
+    name: "Example",
+    theme_color: "#123456",
+    display: "standalone",
+  });
+  assert.deepEqual(withThemeColor(manifest, null), { name: "Example", display: "standalone" });
+  assert.equal(manifest.theme_color, "red");
 });
 
 test("install icons must be large, square, supported, and usable for any purpose", () => {
