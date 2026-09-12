@@ -19,7 +19,7 @@
 * { box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body { margin: 0; min-width: 320px; }
-button, input, textarea { font: inherit; }
+button, input, select, textarea { font: inherit; }
 button { cursor: pointer; }
 
 .site-header {
@@ -94,7 +94,7 @@ h1 { font-size: clamp(38px, 5vw, 62px); letter-spacing: -.045em; line-height: 1;
 .button.quiet { background: var(--surface); border-color: var(--line); color: var(--ink); }
 .button.quiet:hover { border-color: #aeb9b0; }
 .button.danger { color: var(--danger); }
-.button:focus-visible, input:focus-visible, textarea:focus-visible, .icon-button:focus-visible { outline: 3px solid rgb(23 107 69 / 22%); outline-offset: 2px; }
+.button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, .icon-button:focus-visible { outline: 3px solid rgb(23 107 69 / 22%); outline-offset: 2px; }
 
 .card-grid { display: grid; gap: 16px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .card {
@@ -140,9 +140,12 @@ dialog::backdrop { background: rgb(15 25 19 / 55%); backdrop-filter: blur(3px); 
 .full { grid-column: 1 / -1; }
 .field { display: flex; flex-direction: column; gap: 7px; }
 .field > span, .check-field strong { font-size: 13px; font-weight: 750; }
-.field input, .field textarea { background: #fbfcfa; border: 1px solid #cfd6cf; border-radius: 9px; color: var(--ink); padding: 11px 12px; resize: vertical; }
+.field input, .field select, .field textarea { background: #fbfcfa; border: 1px solid #cfd6cf; border-radius: 9px; color: var(--ink); padding: 11px 12px; resize: vertical; }
 .field small, .check-field small { color: var(--muted); font-size: 12px; }
 .code-field textarea { font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; line-height: 1.55; tab-size: 2; }
+.display-field { border: 1px solid #d7ddd5; border-radius: 12px; margin: 0; padding: 16px; }
+.display-field legend { font-size: 13px; font-weight: 750; padding: 0 6px; }
+.display-controls { display: grid; gap: 14px; grid-template-columns: 1fr 1fr; }
 .site-discovery { background: #f0f6ee; border: 1px solid #cfdfcf; border-radius: 12px; display: grid; gap: 12px; padding: 16px; }
 .site-discovery strong { display: block; font-size: 14px; }
 .site-discovery small { color: var(--muted); display: block; font-size: 12px; margin-top: 3px; }
@@ -182,6 +185,7 @@ dialog::backdrop { background: rgb(15 25 19 / 55%); backdrop-filter: blur(3px); 
   .form-grid { grid-template-columns: 1fr; }
   .check-field { grid-column: 1 / -1; }
   .site-discovery-controls { align-items: stretch; flex-direction: column; }
+  .display-controls { grid-template-columns: 1fr; }
   .override-controls { grid-template-columns: 1fr; }
   #editor-form { padding: 23px; }
 }

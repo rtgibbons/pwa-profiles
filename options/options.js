@@ -3,6 +3,7 @@ import {
   hasSuitableInstallIcon,
   permissionOrigins,
   validateConfiguration,
+  withDisplayPreferences,
 } from "../lib/config.js";
 import {
   generatedIconSvg,
@@ -41,6 +42,11 @@ document.querySelector("#active-tab-color-enabled").addEventListener("change", u
 document.querySelector("#active-tab-color").addEventListener("input", updateColorValue);
 document.querySelector("#active-tab-color-value").addEventListener("input", updateColorFromText);
 document.querySelector("#discover-site").addEventListener("click", discoverSite);
+document.querySelector("#manifest-display").addEventListener("change", () => updateManifestDisplay("display"));
+document
+  .querySelector("#manifest-display-override")
+  .addEventListener("change", () => updateManifestDisplay("override"));
+document.querySelector("#manifest-json").addEventListener("input", syncDisplayControlsFromJson);
 
 await loadState();
 
@@ -167,6 +173,7 @@ function openEditor(configuration) {
   updateColorControl();
   updateColorValue();
   document.querySelector("#manifest-json").value = JSON.stringify(value.manifest, null, 2);
+  syncDisplayControls(value.manifest);
   document.querySelector("#rules-json").value = JSON.stringify(value.rules, null, 2);
   document.querySelector("#site-url").value = "";
   setDiscoveryStatus("");
@@ -254,6 +261,51 @@ function preferredDefaultColor(manifest) {
   return [manifest.background_color, manifest.theme_color].find((color) => /^#[\da-f]{6}$/i.test(color)) || "#ffffff";
 }
 
+function updateManifestDisplay(field) {
+  try {
+    const manifest = JSON.parse(document.querySelector("#manifest-json").value);
+    const updated =
+      field === "display"
+        ? { ...manifest, display: document.querySelector("#manifest-display").value }
+        : withDisplayPreferences(
+            manifest,
+            manifest.display || "browser",
+            document.querySelector("#manifest-display-override").value,
+          );
+    document.querySelector("#manifest-json").value = JSON.stringify(updated, null, 2);
+    syncDisplayControls(updated);
+    elements.error.textContent = "";
+  } catch (error) {
+    elements.error.textContent = `Fix the manifest JSON before changing window behavior: ${error.message}`;
+  }
+}
+
+function syncDisplayControlsFromJson() {
+  try {
+    syncDisplayControls(JSON.parse(document.querySelector("#manifest-json").value));
+  } catch {}
+}
+
+function syncDisplayControls(manifest) {
+  setDisplaySelect(document.querySelector("#manifest-display"), manifest.display || "browser");
+  const overrides = Array.isArray(manifest.display_override) ? manifest.display_override : [];
+  setDisplaySelect(document.querySelector("#manifest-display-override"), overrides[0] || "");
+  document.querySelector("#display-override-note").textContent =
+    overrides.length > 1
+      ? `This manifest has ${overrides.length} ordered overrides. Changing this selection replaces the list.`
+      : "Tried before the fallback display mode.";
+}
+
+function setDisplaySelect(select, value) {
+  if ([...select.options].some((option) => option.value === value)) {
+    select.value = value;
+    return;
+  }
+  const custom = select.querySelector(".custom-option");
+  custom.textContent = `Custom: ${value}`;
+  select.value = custom.value;
+}
+
 async function discoverSite() {
   const button = document.querySelector("#discover-site");
   let url;
@@ -316,6 +368,7 @@ async function discoverSite() {
     document.querySelector("#match-patterns").value = originMatchPattern(pageUrl);
     document.querySelector("#configuration-enabled").checked = false;
     document.querySelector("#manifest-json").value = JSON.stringify(manifest, null, 2);
+    syncDisplayControls(manifest);
     const defaultColor = preferredDefaultColor(manifest);
     document.querySelector("#active-tab-color").value = defaultColor;
     updateColorValue();

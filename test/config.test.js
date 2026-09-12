@@ -10,6 +10,7 @@ import {
   permissionOrigins,
   validateConfiguration,
   validateMatchPattern,
+  withDisplayPreferences,
 } from "../lib/config.js";
 
 test("match patterns distinguish schemes, hosts, subdomains, paths, and queries", () => {
@@ -75,6 +76,20 @@ test("active tab color overrides accept only safe hex colors", () => {
     activeTabColorOverrideCss({ pageOverrides: { activeTabColor: "red; body { display: none" } }),
     null,
   );
+});
+
+test("display preferences preserve the manifest and replace or remove overrides", () => {
+  const manifest = { name: "Example", display: "standalone", display_override: ["tabbed", "minimal-ui"] };
+  assert.deepEqual(withDisplayPreferences(manifest, "minimal-ui", "window-controls-overlay"), {
+    name: "Example",
+    display: "minimal-ui",
+    display_override: ["window-controls-overlay"],
+  });
+  assert.deepEqual(withDisplayPreferences(manifest, "browser", ""), {
+    name: "Example",
+    display: "browser",
+  });
+  assert.deepEqual(manifest.display_override, ["tabbed", "minimal-ui"]);
 });
 
 test("install icons must be large, square, supported, and usable for any purpose", () => {

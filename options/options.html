@@ -114,6 +114,38 @@
               <small>Remove manifest links added by the site.</small>
             </span>
           </label>
+          <fieldset class="display-field full">
+            <legend>Window behavior</legend>
+            <div class="display-controls">
+              <label class="field">
+                <span>Display mode</span>
+                <select id="manifest-display">
+                  <option value="browser">Browser tab</option>
+                  <option value="minimal-ui">Minimal UI</option>
+                  <option value="standalone">Standalone</option>
+                  <option value="fullscreen">Fullscreen</option>
+                  <option class="custom-option" value="__custom__" disabled>Custom value (edit JSON)</option>
+                </select>
+                <small>Fallback when an override is unavailable.</small>
+              </label>
+              <label class="field">
+                <span>Preferred display override</span>
+                <select id="manifest-display-override">
+                  <option value="">No override</option>
+                  <option value="tabbed">Tabbed app</option>
+                  <option value="window-controls-overlay">Window controls overlay</option>
+                  <option value="borderless">Borderless</option>
+                  <option value="picture-in-picture">Picture-in-picture</option>
+                  <option value="fullscreen">Fullscreen</option>
+                  <option value="standalone">Standalone</option>
+                  <option value="minimal-ui">Minimal UI</option>
+                  <option value="browser">Browser tab</option>
+                  <option class="custom-option" value="__custom__" disabled>Custom value (edit JSON)</option>
+                </select>
+                <small id="display-override-note">Tried before the fallback display mode.</small>
+              </label>
+            </div>
+          </fieldset>
           <fieldset class="override-field full">
             <legend>Advanced appearance</legend>
             <div class="override-controls">
