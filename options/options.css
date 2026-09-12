@@ -146,6 +146,15 @@ dialog::backdrop { background: rgb(15 25 19 / 55%); backdrop-filter: blur(3px); 
 .check-field { align-items: start; background: var(--surface-soft); border-radius: 10px; display: flex; gap: 10px; padding: 13px; }
 .check-field input { accent-color: var(--accent); margin-top: 3px; }
 .check-field span { display: flex; flex-direction: column; gap: 3px; }
+.override-field { border: 1px solid #d7ddd5; border-radius: 12px; margin: 0; padding: 16px; }
+.override-field legend { font-size: 13px; font-weight: 750; padding: 0 6px; }
+.override-field > small { color: var(--muted); display: block; font-size: 12px; line-height: 1.45; margin-top: 10px; }
+.override-controls { align-items: stretch; display: grid; gap: 12px; grid-template-columns: minmax(0, 1fr) auto; }
+.color-field { align-items: center; background: var(--surface-soft); border-radius: 10px; display: grid; gap: 8px; grid-template-columns: auto auto; padding: 10px 13px; }
+.color-field > label { font-size: 12px; font-weight: 750; grid-column: 1 / -1; }
+.color-field input { background: transparent; border: 0; height: 30px; padding: 0; width: 42px; }
+.color-field input:disabled { cursor: not-allowed; opacity: .45; }
+.color-field .color-value { background: #fbfcfa; border: 1px solid #cfd6cf; border-radius: 7px; color: var(--muted); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; padding: 6px 8px; text-transform: uppercase; width: 86px; }
 .dialog-actions { border-top: 1px solid var(--line); display: flex; flex-shrink: 0; gap: 9px; justify-content: end; margin-top: 8px; padding-top: 20px; }
 .form-error { color: var(--danger); font-size: 13px; margin: 14px 0 0; min-height: 20px; }
 
@@ -161,6 +170,7 @@ dialog::backdrop { background: rgb(15 25 19 / 55%); backdrop-filter: blur(3px); 
   .search input { width: 100%; }
   .form-grid { grid-template-columns: 1fr; }
   .check-field { grid-column: 1 / -1; }
+  .override-controls { grid-template-columns: 1fr; }
   #editor-form { padding: 23px; }
 }
 

@@ -5,6 +5,17 @@
   const { id, manifest, replaceExistingManifest } = response.configuration;
   const manifestUrl = `data:application/manifest+json,${encodeURIComponent(JSON.stringify(manifest))}`;
 
+  if (!document.head) {
+    await new Promise((resolve) => {
+      const observer = new MutationObserver(() => {
+        if (!document.head) return;
+        observer.disconnect();
+        resolve();
+      });
+      observer.observe(document, { childList: true, subtree: true });
+    });
+  }
+
   if (replaceExistingManifest) removeOtherManifests(manifestUrl);
   const link = document.createElement("link");
   link.rel = "manifest";

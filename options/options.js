@@ -25,6 +25,9 @@ elements.form.addEventListener("submit", saveEditor);
 elements.configurationList.addEventListener("click", handleConfigurationClick);
 elements.configurationList.addEventListener("change", handleConfigurationToggle);
 elements.templateList.addEventListener("click", handleTemplateClick);
+document.querySelector("#active-tab-color-enabled").addEventListener("change", updateColorControl);
+document.querySelector("#active-tab-color").addEventListener("input", updateColorValue);
+document.querySelector("#active-tab-color-value").addEventListener("input", updateColorFromText);
 
 await loadState();
 
@@ -75,6 +78,9 @@ function renderConfigurations() {
       ),
       pill(configuration.replaceExistingManifest ? "Replaces manifest" : "Adds manifest"),
     );
+    if (configuration.pageOverrides?.activeTabColor) {
+      meta.append(pill(`Tab ${configuration.pageOverrides.activeTabColor.toUpperCase()}`));
+    }
     const actions = div("card-actions");
     const source = document.createElement("span");
     source.className = "source";
@@ -123,6 +129,7 @@ function openEditor(configuration) {
     enabled: false,
     matchPatterns: ["https://example.com/*"],
     replaceExistingManifest: true,
+    pageOverrides: {},
     manifest: {
       name: "Example",
       short_name: "Example",
@@ -140,6 +147,12 @@ function openEditor(configuration) {
   document.querySelector("#match-patterns").value = value.matchPatterns.join("\n");
   document.querySelector("#configuration-enabled").checked = value.enabled;
   document.querySelector("#replace-manifest").checked = value.replaceExistingManifest;
+  const activeTabColor = value.pageOverrides?.activeTabColor;
+  const colorInput = document.querySelector("#active-tab-color");
+  document.querySelector("#active-tab-color-enabled").checked = Boolean(activeTabColor);
+  colorInput.value = activeTabColor || preferredDefaultColor(value.manifest);
+  updateColorControl();
+  updateColorValue();
   document.querySelector("#manifest-json").value = JSON.stringify(value.manifest, null, 2);
   document.querySelector("#rules-json").value = JSON.stringify(value.rules, null, 2);
   elements.error.textContent = "";
@@ -169,6 +182,12 @@ async function saveEditor(event) {
         .map((value) => value.trim())
         .filter(Boolean),
       replaceExistingManifest: document.querySelector("#replace-manifest").checked,
+      pageOverrides: {
+        ...(existing?.pageOverrides ?? {}),
+        activeTabColor: document.querySelector("#active-tab-color-enabled").checked
+          ? document.querySelector("#active-tab-color").value
+          : null,
+      },
       manifest: JSON.parse(document.querySelector("#manifest-json").value),
       rules: JSON.parse(document.querySelector("#rules-json").value),
     };
@@ -191,7 +210,33 @@ async function saveEditor(event) {
   }
   closeEditor();
   await loadState();
-  showToast(`${configuration.name} saved.`);
+  showToast(`${configuration.name} saved. Reload matching pages to apply.`);
+}
+
+function updateColorControl() {
+  const disabled = !document.querySelector("#active-tab-color-enabled").checked;
+  document.querySelector("#active-tab-color").disabled = disabled;
+  document.querySelector("#active-tab-color-value").disabled = disabled;
+}
+
+function updateColorValue() {
+  const valueInput = document.querySelector("#active-tab-color-value");
+  valueInput.value = document.querySelector("#active-tab-color").value;
+  valueInput.setCustomValidity("");
+}
+
+function updateColorFromText() {
+  const valueInput = document.querySelector("#active-tab-color-value");
+  if (/^#[\da-f]{6}$/i.test(valueInput.value)) {
+    document.querySelector("#active-tab-color").value = valueInput.value;
+    valueInput.setCustomValidity("");
+  } else {
+    valueInput.setCustomValidity("Enter a six-digit hexadecimal color such as #232F3E.");
+  }
+}
+
+function preferredDefaultColor(manifest) {
+  return [manifest.background_color, manifest.theme_color].find((color) => /^#[\da-f]{6}$/i.test(color)) || "#ffffff";
 }
 
 async function handleConfigurationClick(event) {

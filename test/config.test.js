@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  activeTabColorOverrideCss,
   configurationForUrl,
   createConfiguration,
   hasSuitableInstallIcon,
@@ -60,6 +61,20 @@ test("configuration validation catches invalid manifests and rules", () => {
     "Manifest must include a square PNG, SVG, or WebP icon of at least 144px with purpose 'any'.",
     "Rule 1 must contain action and condition.",
   ]);
+});
+
+test("active tab color overrides accept only safe hex colors", () => {
+  const configuration = {
+    pageOverrides: { activeTabColor: "#232F3E" },
+  };
+  assert.equal(
+    activeTabColorOverrideCss(configuration),
+    "html { background-color: #232F3E !important; }",
+  );
+  assert.equal(
+    activeTabColorOverrideCss({ pageOverrides: { activeTabColor: "red; body { display: none" } }),
+    null,
+  );
 });
 
 test("install icons must be large, square, supported, and usable for any purpose", () => {

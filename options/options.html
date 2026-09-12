@@ -99,6 +99,34 @@
               <small>Remove manifest links added by the site.</small>
             </span>
           </label>
+          <fieldset class="override-field full">
+            <legend>Advanced appearance</legend>
+            <div class="override-controls">
+              <label class="check-field">
+                <input id="active-tab-color-enabled" type="checkbox" />
+                <span>
+                  <strong>Override active tab color</strong>
+                  <small>Set the document canvas without changing the site's body styling.</small>
+                </span>
+              </label>
+              <div class="color-field">
+                <label for="active-tab-color">Canvas color</label>
+                <input id="active-tab-color" type="color" value="#ffffff" disabled />
+                <input
+                  id="active-tab-color-value"
+                  class="color-value"
+                  aria-label="Canvas color hexadecimal value"
+                  pattern="#[0-9a-fA-F]{6}"
+                  value="#ffffff"
+                  disabled
+                />
+              </div>
+            </div>
+            <small>
+              Applied to the root HTML element as a user-origin style. The color may appear in
+              overscroll or gaps on pages that do not cover the full viewport.
+            </small>
+          </fieldset>
           <label class="field full code-field">
             <span>Web app manifest (JSON)</span>
             <textarea id="manifest-json" rows="15" required spellcheck="false"></textarea>

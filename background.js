@@ -2,6 +2,7 @@ import {
   CONFIGURATIONS_KEY,
   SCHEMA_VERSION,
   SCHEMA_VERSION_KEY,
+  activeTabColorOverrideCss,
   configurationForUrl,
   createConfiguration,
   permissionOrigins,
@@ -60,7 +61,7 @@ async function handleMessage(message, sender) {
       return replaceConfigurations(message.configurations);
     case "getConfigurationForPage":
       if (!sender.tab?.url) return { ok: false, error: "Page URL is unavailable." };
-      return getConfigurationForPage(sender.tab.url);
+      return getConfigurationForPage(sender.tab.url, sender.tab.id);
     case "manifestInjected":
       if (sender.tab?.id && sender.tab.url) {
         const configuration = configurationForUrl(await getConfigurations(), sender.tab.url);
@@ -162,9 +163,17 @@ async function replaceConfigurations(configurations) {
   return { ok: true };
 }
 
-async function getConfigurationForPage(url) {
+async function getConfigurationForPage(url, tabId) {
   const configuration = configurationForUrl(await getConfigurations(), url);
   if (!configuration) return { ok: true, configuration: null };
+  const overrideCss = activeTabColorOverrideCss(configuration);
+  if (overrideCss) {
+    await chrome.scripting.insertCSS({
+      target: { tabId },
+      css: overrideCss,
+      origin: "USER",
+    });
+  }
   const manifest = resolveManifestUrls(configuration.manifest, url);
   await inlineExtensionImages(manifest);
   return {
@@ -247,7 +256,7 @@ async function reconcile() {
         js: ["injectManifest.js"],
         matches,
         persistAcrossSessions: true,
-        runAt: "document_end",
+        runAt: "document_start",
       },
     ]);
   }
