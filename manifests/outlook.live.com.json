@@ -1,0 +1,7 @@
+{
+	"name": "Outlook",
+	"id": "better-pwa/outlook.live.com",
+	"short_name": "Outlook",
+	"start_url": "/",
+	"display": "minimal-ui"
+}
