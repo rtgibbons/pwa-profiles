@@ -16,6 +16,15 @@ test("catalog identities and exact first match patterns are unambiguous", () => 
   for (const template of catalog.templates) {
     assert.match(template.matchPatterns[0], /^https:\/\/[^/*]+\/\*$/);
     assert.match(template.manifestPath, /^manifests\/[^/]+\.json$/);
+    const { source } = template;
+    assert.deepEqual(Object.keys(source).sort(), ["label", "path", "repository", "revision"]);
+    assert.ok(typeof source.label === "string" && source.label.trim());
+    assert.match(source.repository, /^https:\/\/github\.com\/[\w-]+\/[\w-]+$/);
+    assert.match(source.revision, /^[a-f0-9]{40}$/);
+    const original = ["slack", "github", "canva", "smh"].includes(template.id);
+    assert.equal(source.repository, `https://github.com/${original ? "benfredwells" : "bmndc"}/betterPWAs`);
+    assert.equal(source.revision, original ? "40ee31ad6cf6acc66189b482dab25df094b5abc2" : "d10a17ca4dc928be96f4acc4367a9202133b11d4");
+    assert.equal(source.path, original ? template.manifestPath.replace(/\.json$/, ".js") : template.manifestPath);
   }
 });
 

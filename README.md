@@ -1,5 +1,9 @@
 # Better PWAs
 
+**Independent project: not affiliated with, sponsored by, or endorsed by any listed site or
+vendor. Product names and trademarks belong to their respective owners and identify compatible
+services only. No vendor logo artwork is distributed; bundled templates use neutral generated icons.**
+
 Better PWAs is a Chrome extension that helps websites feel more like real desktop apps. It lets
 you replace a site's web app manifest with one you control—without changing the website or sending
 your settings anywhere.
@@ -36,8 +40,13 @@ for that site. It is generated locally and remains the same for the same hostnam
 
 The extension also includes read-only templates. Using one creates an editable copy, so the bundled
 original is always available if you want to start over. Templates include Slack, GitHub, Canva,
-Sydney Morning Herald, Notion, Claude, Discord, Outlook, Microsoft Teams, X, and Reddit. Several
-were adapted from [bmndc/betterPWAs](https://github.com/bmndc/betterPWAs).
+Sydney Morning Herald, Notion, Claude, Discord, Outlook, Microsoft Teams, X, and Reddit.
+
+This project builds on Ben's MIT-licensed
+[betterPWAs at 40ee31a](https://github.com/benfredwells/betterPWAs/commit/40ee31ad6cf6acc66189b482dab25df094b5abc2),
+with adapted templates/software from MIT-licensed
+[bmndc/betterPWAs at d10a17c](https://github.com/bmndc/betterPWAs/commit/d10a17ca4dc928be96f4acc4367a9202133b11d4).
+See [third-party notices and the asset ledger](THIRD_PARTY_NOTICES.md) and [LICENSE](LICENSE).
 
 ## How to use it
 
@@ -62,8 +71,9 @@ Manifest**. You should see the name, colors, display modes, and other values fro
 
 ## Privacy
 
-Profiles are stored locally in `chrome.storage.local`. Site access is requested only when needed,
-and importing a website or applying its profile does not send your settings to an external service.
+Profiles are stored locally in `chrome.storage.local`. The four original sites have required host
+permissions; other sites require optional access for enabling profiles or importing site metadata.
+See [PRIVACY.md](PRIVACY.md) for site access and discovery behavior.
 
 ## Development
 

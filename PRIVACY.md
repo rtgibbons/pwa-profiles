@@ -4,8 +4,13 @@ The extension stores user-created site configurations, web app manifests, and ne
 Chrome's local extension storage. This data stays on the user's device and is not available to the
 developer. Exported settings are saved only when the user explicitly requests a local backup.
 
-The extension requests access to its four original supported sites. Access to any additional site
-is requested only when the user enables a configuration for that site. Site access is used solely
-to replace web app manifests and apply user-configured Declarative Net Request rules.
+The extension declares required access to app.slack.com, github.com, www.canva.com, and
+www.smh.com.au, and creates enabled profiles for those sites on first use. Chromium controls
+whether that access is granted. Other HTTP/HTTPS origins are optional: access is requested
+when you enable a profile or import a site's manifest and page metadata. Importing fetches the
+page and its same-origin manifest; previewing imported icons can contact their hosts.
+The extension only registers profile scripts and network rules for enabled profiles
+with granted access. Site access supports manifest replacement, profile color overrides,
+user-configured Declarative Net Request rules, and user-initiated site discovery.
 
-The source code can be inspected at [github.com/rtgibbons/betterpwas](https://github.com/rtgibbons/betterpwas).
+The source code can be inspected at [github.com/rtgibbons/pwa-profiles](https://github.com/rtgibbons/pwa-profiles).

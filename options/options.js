@@ -123,7 +123,7 @@ function renderConfigurations() {
 function renderTemplates() {
   const query = elements.search.value.trim().toLowerCase();
   const visible = templates.filter((template) =>
-    [template.name, template.summary, template.source].some((value) => value.toLowerCase().includes(query)),
+    [template.name, template.summary, template.source.label].some((value) => value.toLowerCase().includes(query)),
   );
   elements.templateList.replaceChildren();
   visible.forEach((template) => {
@@ -137,7 +137,8 @@ function renderTemplates() {
     const actions = div("card-actions");
     const source = document.createElement("span");
     source.className = "source";
-    source.textContent = template.source;
+    source.textContent = template.source.label;
+    source.title = `${template.source.repository}/blob/${template.source.revision}/${template.source.path}`;
     const button = document.createElement("button");
     button.className = "button quiet";
     button.type = "button";

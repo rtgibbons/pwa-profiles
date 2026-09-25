@@ -5,7 +5,12 @@
       "id": "slack",
       "name": "Slack",
       "summary": "A standalone Slack app with a neutral generated icon.",
-      "source": "Better PWAs",
+      "source": {
+        "label": "Ben / Better PWAs",
+        "repository": "https://github.com/benfredwells/betterPWAs",
+        "revision": "40ee31ad6cf6acc66189b482dab25df094b5abc2",
+        "path": "manifests/app.slack.com.js"
+      },
       "matchPatterns": ["https://app.slack.com/*"],
       "manifestPath": "manifests/app.slack.com.json",
       "enabledByDefault": true
@@ -14,7 +19,12 @@
       "id": "github",
       "name": "GitHub",
       "summary": "A minimal UI GitHub app with experimental tabbed display support.",
-      "source": "Better PWAs",
+      "source": {
+        "label": "Ben / Better PWAs",
+        "repository": "https://github.com/benfredwells/betterPWAs",
+        "revision": "40ee31ad6cf6acc66189b482dab25df094b5abc2",
+        "path": "manifests/github.com.js"
+      },
       "matchPatterns": ["https://github.com/*"],
       "manifestPath": "manifests/github.com.json",
       "enabledByDefault": true,
@@ -40,7 +50,12 @@
       "id": "canva",
       "name": "Canva",
       "summary": "A standalone Canva app with experimental tabbed display support.",
-      "source": "Better PWAs",
+      "source": {
+        "label": "Ben / Better PWAs",
+        "repository": "https://github.com/benfredwells/betterPWAs",
+        "revision": "40ee31ad6cf6acc66189b482dab25df094b5abc2",
+        "path": "manifests/www.canva.com.js"
+      },
       "matchPatterns": ["https://www.canva.com/*"],
       "manifestPath": "manifests/www.canva.com.json",
       "enabledByDefault": true
@@ -49,7 +64,12 @@
       "id": "smh",
       "name": "Sydney Morning Herald",
       "summary": "A minimal UI app for the Sydney Morning Herald.",
-      "source": "Better PWAs",
+      "source": {
+        "label": "Ben / Better PWAs",
+        "repository": "https://github.com/benfredwells/betterPWAs",
+        "revision": "40ee31ad6cf6acc66189b482dab25df094b5abc2",
+        "path": "manifests/www.smh.com.au.js"
+      },
       "matchPatterns": ["https://www.smh.com.au/*"],
       "manifestPath": "manifests/www.smh.com.au.json",
       "enabledByDefault": true
@@ -58,7 +78,12 @@
       "id": "notion",
       "name": "Notion",
       "summary": "A minimal UI Notion app with experimental tabbed display support.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/app.notion.com.json"
+      },
       "matchPatterns": ["https://app.notion.com/*"],
       "manifestPath": "manifests/app.notion.com.json"
     },
@@ -66,7 +91,12 @@
       "id": "claude",
       "name": "Claude",
       "summary": "A standalone Claude app with a neutral generated icon.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/claude.ai.json"
+      },
       "matchPatterns": ["https://claude.ai/*"],
       "manifestPath": "manifests/claude.ai.json"
     },
@@ -74,7 +104,12 @@
       "id": "discord",
       "name": "Discord",
       "summary": "A standalone Discord app with window controls overlay.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/discord.com.json"
+      },
       "matchPatterns": ["https://discord.com/*"],
       "manifestPath": "manifests/discord.com.json"
     },
@@ -82,7 +117,12 @@
       "id": "outlook-live",
       "name": "Outlook.com",
       "summary": "A minimal UI app for personal Outlook accounts.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/outlook.live.com.json"
+      },
       "matchPatterns": ["https://outlook.live.com/*"],
       "manifestPath": "manifests/outlook.live.com.json"
     },
@@ -90,7 +130,12 @@
       "id": "outlook-office",
       "name": "Outlook for Microsoft 365",
       "summary": "A minimal UI app for Microsoft 365 Outlook accounts.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/outlook.office.com.json"
+      },
       "matchPatterns": ["https://outlook.office.com/*"],
       "manifestPath": "manifests/outlook.office.com.json"
     },
@@ -98,7 +143,12 @@
       "id": "teams",
       "name": "Microsoft Teams",
       "summary": "A standalone Teams app with launch and protocol handlers.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/teams.microsoft.com.json"
+      },
       "matchPatterns": ["https://teams.microsoft.com/*"],
       "manifestPath": "manifests/teams.microsoft.com.json"
     },
@@ -106,7 +156,12 @@
       "id": "x",
       "name": "X",
       "summary": "A standalone X app with shortcuts and sharing.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/x.com.json"
+      },
       "matchPatterns": ["https://x.com/*"],
       "manifestPath": "manifests/x.com.json"
     },
@@ -114,7 +169,12 @@
       "id": "reddit",
       "name": "Reddit",
       "summary": "A minimal UI Reddit app with shortcuts.",
-      "source": "bmndc/betterPWAs",
+      "source": {
+        "label": "bmndc/betterPWAs",
+        "repository": "https://github.com/bmndc/betterPWAs",
+        "revision": "d10a17ca4dc928be96f4acc4367a9202133b11d4",
+        "path": "manifests/www.reddit.com.json"
+      },
       "matchPatterns": ["https://www.reddit.com/*"],
       "manifestPath": "manifests/www.reddit.com.json"
     }
