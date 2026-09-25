@@ -43,7 +43,7 @@ test("package is deterministic, excludes unsafe inputs, and rejects dirty tracke
     }
     run("git", ["commit", "-qm", "Disposable package fixture"]);
     build();
-    const archive = join(directory, "dist/betterPWAs.zip");
+    const archive = join(directory, "dist/pwa-profiles.zip");
     const first = readFileSync(archive);
     build();
     assert.deepEqual(readFileSync(archive), first);

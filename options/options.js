@@ -602,7 +602,7 @@ function exportConfigurations() {
   );
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `better-pwas-settings-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.download = `pwa-profiles-settings-${new Date().toISOString().slice(0, 10)}.json`;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 0);
   showToast("Settings exported.");

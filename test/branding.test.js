@@ -10,6 +10,30 @@ const manifest = JSON.parse(read("manifest.json"));
 const iconMap = (disabled, sizes) => Object.fromEntries(sizes.map((size) =>
   [size, `images/icon${disabled ? "Disabled" : ""}${size}.png`]));
 
+test("exports use the new filename while old filenames remain content-importable", async () => {
+  const source = read("options/options.js");
+  const configurations = [{ id: "preserved-id", name: "Custom backup", enabled: true }];
+  const anchor = { click() {} };
+  let blob;
+  let imported;
+  const context = {
+    configurations, Blob,
+    Date: class extends Date { constructor() { super("2026-09-25T23:59:00Z"); } },
+    URL: { createObjectURL(value) { blob = value; return "blob:test"; }, revokeObjectURL() {} },
+    document: { createElement: () => anchor }, setTimeout: (fn) => fn(),
+    showToast() {}, confirm: () => true, loadState: async () => {},
+    chrome: { runtime: { sendMessage: async (message) => { imported = message; return { ok: true }; } } },
+  };
+  runInNewContext(source.slice(source.indexOf("function exportConfigurations()"), source.indexOf("function actionButtons()")), context);
+  context.exportConfigurations();
+  assert.equal(anchor.download, "pwa-profiles-settings-2026-09-25.json");
+  assert.deepEqual(JSON.parse(await blob.text()), { version: 1, configurations });
+  const event = { target: { files: [{ name: "better-pwas-settings-2024-04-03.json", text: () => blob.text() }], value: "legacy-file" } };
+  await context.importConfigurations(event);
+  assert.deepEqual(JSON.parse(JSON.stringify(imported)), { type: "replaceConfigurations", configurations });
+  assert.equal(event.target.value, "");
+});
+
 test("public metadata and display copy use the exact PWA Profiles identity", () => {
   assert.equal(manifest.name, "PWA Profiles \u2013 Custom Web Apps");
   assert.equal(manifest.short_name, "PWA Profiles");

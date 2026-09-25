@@ -28,7 +28,7 @@ for (const file of files) {
 }
 
 mkdirSync("dist", { recursive: true });
-const archive = "dist/betterPWAs.zip";
+const archive = "dist/pwa-profiles.zip";
 // Git uses the commit timestamp and tracked blob bytes, never working-tree mtimes or content.
 git("archive", "--format=zip", `--output=${archive}`, head, "--", ...files);
 run("unzip", ["-t", archive]);
