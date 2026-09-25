@@ -10,7 +10,7 @@ import {
   withThemeColor,
 } from "../lib/config.js";
 import {
-  generatedIconSvg,
+  createGeneratedIcon,
   inferManifest,
   normalizeSiteUrl,
   originMatchPattern,
@@ -527,15 +527,6 @@ function extractMetadata(document, pageUrl) {
 function imageTypeFromUrl(url) {
   const extension = new URL(url, "https://example.invalid").pathname.split(".").pop().toLowerCase();
   return { png: "image/png", svg: "image/svg+xml", webp: "image/webp" }[extension] || "";
-}
-
-function createGeneratedIcon(siteUrl) {
-  return {
-    src: `data:image/svg+xml;base64,${btoa(generatedIconSvg(siteUrl))}`,
-    sizes: "any",
-    type: "image/svg+xml",
-    purpose: "any maskable",
-  };
 }
 
 function showDiscoveredIcon(icons, generated = false) {

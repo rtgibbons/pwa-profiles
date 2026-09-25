@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createGeneratedIcon,
   generatedIconDesign,
   generatedIconSvg,
   inferManifest,
@@ -30,6 +31,20 @@ test("generated icon designs are deterministic per hostname", () => {
   assert.equal(svg, generatedIconSvg("https://mail.example.com/settings"));
   assert.match(svg, /^<svg .+<linearGradient .+<pattern .+<\/svg>$/);
   assert.ok(svg.length < 700);
+});
+
+test("generated icon descriptors are neutral, self-contained, and hostname-derived", () => {
+  const icon = createGeneratedIcon("https://mail.example.com/inbox");
+  assert.deepEqual(icon, createGeneratedIcon("http://MAIL.example.com:8080/settings"));
+  assert.notEqual(icon.src, createGeneratedIcon("https://chat.example.com").src);
+  assert.equal(icon.sizes, "any");
+  assert.equal(icon.type, "image/svg+xml");
+  assert.equal(icon.purpose, "any maskable");
+  assert.match(icon.src, /^data:image\/svg\+xml;base64,/);
+  const svg = atob(icon.src.split(",")[1]);
+  assert.match(svg, /^<svg xmlns="http:\/\/www.w3.org\/2000\/svg" viewBox="0 0 512 512">/);
+  assert.doesNotMatch(svg, /<text|<image|<script|href=|example\.com/);
+  assert.match(svg, /<\/svg>$/);
 });
 
 test("imported manifest URLs resolve against the manifest location", () => {
