@@ -1,18 +1,24 @@
 {
   "manifest_version": 3,
-  "name": "Better PWAs",
-  "version": "2.6.0",
-  "description": "Improved installable web apps for selected sites.",
+  "name": "PWA Profiles – Custom Web Apps",
+  "short_name": "PWA Profiles",
+  "version": "3.0.0",
+  "description": "Create custom installable web apps with editable manifests, display modes, colors, icons, and per-site settings.",
+  "homepage_url": "https://github.com/rtgibbons/pwa-profiles",
   "icons": {
+    "16": "images/icon16.png",
+    "32": "images/icon32.png",
     "48": "images/icon48.png",
     "128": "images/icon128.png",
     "512": "images/icon512.png"
   },
   "action": {
     "default_icon": {
+      "16": "images/iconDisabled16.png",
+      "32": "images/iconDisabled32.png",
       "48": "images/iconDisabled48.png"
     },
-    "default_title": "Better PWA: No betterment available"
+    "default_title": "PWA Profiles: No active profile"
   },
   "options_ui": {
     "page": "options/options.html",

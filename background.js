@@ -12,10 +12,10 @@ import { createGeneratedIcon } from "./lib/site-discovery.js";
 import { migrateTemplateConfigurations } from "./lib/migrations.js";
 
 const CONTENT_SCRIPT_ID = "better-pwas-managed";
-const ENABLED_ICON = "images/icon48.png";
-const DISABLED_ICON = "images/iconDisabled48.png";
-const ENABLED_TEXT = "Better PWAs: replacement manifest active";
-const DISABLED_TEXT = "Better PWAs: no active configuration";
+const ENABLED_ICON = { 16: "images/icon16.png", 32: "images/icon32.png", 48: "images/icon48.png" };
+const DISABLED_ICON = { 16: "images/iconDisabled16.png", 32: "images/iconDisabled32.png", 48: "images/iconDisabled48.png" };
+const ENABLED_TEXT = "PWA Profiles: Replacement manifest active";
+const DISABLED_TEXT = "PWA Profiles: No active profile";
 
 let reconciliation = Promise.resolve();
 let configurationMigration;
@@ -304,14 +304,14 @@ async function updateActionForTab(tab) {
     (await chrome.permissions.contains({ origins: permissionOrigins(configuration.matchPatterns) }));
   await setAction(
     hasAccess ? ENABLED_ICON : DISABLED_ICON,
-    hasAccess ? `Better PWAs: ${configuration.name} configured` : DISABLED_TEXT,
+    hasAccess ? `PWA Profiles: ${configuration.name} profile enabled` : DISABLED_TEXT,
     tab.id,
   );
 }
 
 function setAction(icon, title, tabId) {
   return Promise.all([
-    chrome.action.setIcon({ path: { 48: icon }, tabId }),
+    chrome.action.setIcon({ path: icon, tabId }),
     chrome.action.setTitle({ title, tabId }),
   ]);
 }

@@ -21,15 +21,14 @@ neutral icon generation. Template routes and product names identify compatible s
 
 | Assets | Provenance and license | Distribution |
 | --- | --- | --- |
-| `images/icon48.png`, `images/icon128.png`, `images/icon512.png` | Ben's extension artwork at the pinned upstream revision, MIT; incorporates the community PWA mark credited below | Release |
-| `images/iconDisabled48.png` | Ben's disabled extension-state artwork at the pinned upstream revision, MIT; incorporates the community PWA mark | Release |
-| `visd/icon4.xcf`, `visd/icon4-128.xcf`, `visd/icon4Blue.xcf`, `visd/icon4Disabled.xcf`, `visd/icon4Red.xcf` | Ben's extension artwork sources at the pinned upstream revision, MIT; incorporates the community PWA mark | Source only, excluded from release |
-| `visd/pwalogo.svg` | Diego (diekus) González-Zúñiga's [community PWA logo](https://github.com/webmaxru/progressive-web-apps-logo/blob/master/pwalogo.svg), [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) public-domain dedication | Source only, excluded from release |
+| `images/icon16.png`, `images/icon32.png`, `images/icon48.png`, `images/icon128.png`, `images/icon512.png` | Project-authored Profile Stack identity: original flat vector geometry, MIT; no third-party marks | Release |
+| `images/iconDisabled16.png`, `images/iconDisabled32.png`, `images/iconDisabled48.png` | Project-authored Profile Stack disabled-state palette, MIT | Release |
+| `visd/pwa-profiles-profile-stack.svg` | Canonical editable source for the project-authored Profile Stack identity, MIT | Source only, excluded from release |
 | Generated template icons (`lib/site-discovery.js`) | Project-authored deterministic hostname-based gradient and stripes, MIT; no vendor artwork or remote image dependency | Generated locally at runtime |
 
 No vendor logo artwork is distributed in the current source tree or release archive. Removed
 vendor assets and obsolete design media may remain in Git history; historical archives are not
-release inputs. The retained community PWA mark is not a vendor logo.
+release inputs.
 
 This is an independent project, not affiliated with, sponsored by, or endorsed by the listed
 vendors or services. Their names and trademarks remain the property of their respective owners.

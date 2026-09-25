@@ -13,8 +13,8 @@ const files = [
   "manifests/app.notion.com.json", "manifests/claude.ai.json", "manifests/discord.com.json",
   "manifests/outlook.live.com.json", "manifests/outlook.office.com.json",
   "manifests/teams.microsoft.com.json", "manifests/x.com.json", "manifests/www.reddit.com.json",
-  "images/icon48.png", "images/icon128.png", "images/icon512.png",
-  "images/iconDisabled48.png",
+  "images/icon16.png", "images/icon32.png", "images/icon48.png", "images/icon128.png", "images/icon512.png",
+  "images/iconDisabled16.png", "images/iconDisabled32.png", "images/iconDisabled48.png",
   "LICENSE", "THIRD_PARTY_NOTICES.md", "PRIVACY.md",
 ].sort();
 const run = (command, args) => execFileSync(command, args, { env: { ...process.env, TZ: "UTC" } });

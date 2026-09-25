@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">PWA Profiles — Profile Stack identity</title>
+  <desc id="desc">Canonical editable vector master. Built on a 512-unit grid with a 32-unit outer safe area. Active palette: continuity green #176B45, adaptive keyline #67C994, rear card #C8E8D5, front card #FFFFFF. Disabled palette: graphite #60656A, edge gray #AEB4B8, rear gray #C9CDD0, front gray #F4F5F5. All geometry is flat fill and stroke; no gradients, filters, raster images, text, or third-party marks.</desc>
+  <metadata>
+    Grid: 512 × 512 units. Outer visible bounds: x/y 32–480 (6.25% safe area).
+    Base: x/y 48, width/height 416, radius 96, 32-unit centered keyline.
+    Rear card: x/y 96, width/height 256, radius 64; intentionally detail-free for 16px use.
+    Front card: x/y 160, width/height 256, radius 64.
+    Profile aperture: x 288, y 192, width/height 96, radius 32.
+    16px pixel cadence: 1px safe area/keyline, 2px card offset, 3px aperture.
+  </metadata>
+
+  <!-- Canonical active artwork. Apply the disabled palette from metadata for monochrome exports. -->
+  <g id="profile-stack">
+    <rect x="48" y="48" width="416" height="416" rx="96" fill="#176B45" stroke="#67C994" stroke-width="32"/>
+    <rect x="96" y="96" width="256" height="256" rx="64" fill="#C8E8D5"/>
+    <rect x="160" y="160" width="256" height="256" rx="64" fill="#FFFFFF"/>
+    <rect x="288" y="192" width="96" height="96" rx="32" fill="#176B45"/>
+  </g>
+</svg>

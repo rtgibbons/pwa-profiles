@@ -36,7 +36,7 @@
   }
 
   await chrome.runtime.sendMessage({ type: "manifestInjected", configurationId: id });
-})().catch((error) => console.error("Better PWAs could not inject the manifest:", error));
+})().catch((error) => console.error("PWA Profiles could not inject the manifest:", error));
 
 function removeOtherManifests(manifestUrl) {
   document.querySelectorAll('link[rel="manifest"]').forEach((link) => {

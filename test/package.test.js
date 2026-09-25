@@ -13,7 +13,7 @@ test("every retained extension PNG is referenced by runtime code", () => {
   const references = new Set(runtime.flatMap((file) =>
     [...readFileSync(join(root, file), "utf8").matchAll(/images\/([\w-]+\.png)/g)].map((match) => match[1]),
   ));
-  assert.deepEqual([...references].sort(), ["icon128.png", "icon48.png", "icon512.png", "iconDisabled48.png"]);
+  assert.deepEqual([...references].sort(), ["icon128.png", "icon16.png", "icon32.png", "icon48.png", "icon512.png", "iconDisabled16.png", "iconDisabled32.png", "iconDisabled48.png"]);
   assert.deepEqual(readdirSync(join(root, "images")).sort(), [...references].sort());
 });
 
@@ -49,7 +49,7 @@ test("package is deterministic, excludes unsafe inputs, and rejects dirty tracke
     assert.deepEqual(readFileSync(archive), first);
     const entries = run("unzip", ["-Z1", archive]).toString().trim().split("\n");
     assert.deepEqual(entries.filter((entry) => entry.endsWith(".png")).sort(), [
-      "icon128.png", "icon48.png", "icon512.png", "iconDisabled48.png",
+      "icon128.png", "icon16.png", "icon32.png", "icon48.png", "icon512.png", "iconDisabled16.png", "iconDisabled32.png", "iconDisabled48.png",
     ].map((name) => `images/${name}`));
     for (const required of ["LICENSE", "THIRD_PARTY_NOTICES.md", "PRIVACY.md", "manifest.json"]) {
       assert.ok(entries.includes(required));
