@@ -22,7 +22,7 @@ neutral icon generation. Template routes and product names identify compatible s
 | Assets | Provenance and license | Distribution |
 | --- | --- | --- |
 | `images/icon48.png`, `images/icon128.png`, `images/icon512.png` | Ben's extension artwork at the pinned upstream revision, MIT; incorporates the community PWA mark credited below | Release |
-| `images/iconBlue48.png`, `images/iconBlue512.png`, `images/iconDisabled48.png`, `images/iconDisabled512.png`, `images/iconRed48.png`, `images/iconRed512.png` | Ben's extension state/color variants at the pinned upstream revision, MIT; incorporates the community PWA mark | Release |
+| `images/iconDisabled48.png` | Ben's disabled extension-state artwork at the pinned upstream revision, MIT; incorporates the community PWA mark | Release |
 | `visd/icon4.xcf`, `visd/icon4-128.xcf`, `visd/icon4Blue.xcf`, `visd/icon4Disabled.xcf`, `visd/icon4Red.xcf` | Ben's extension artwork sources at the pinned upstream revision, MIT; incorporates the community PWA mark | Source only, excluded from release |
 | `visd/pwalogo.svg` | Diego (diekus) González-Zúñiga's [community PWA logo](https://github.com/webmaxru/progressive-web-apps-logo/blob/master/pwalogo.svg), [CC0 1.0 Universal](https://creativecommons.org/publicdomain/zero/1.0/) public-domain dedication | Source only, excluded from release |
 | Generated template icons (`lib/site-discovery.js`) | Project-authored deterministic hostname-based gradient and stripes, MIT; no vendor artwork or remote image dependency | Generated locally at runtime |

@@ -1,10 +1,21 @@
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
+import { cpSync, globSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import test from "node:test";
+
+test("every retained extension PNG is referenced by runtime code", () => {
+  const root = fileURLToPath(new URL("../", import.meta.url));
+  const runtime = ["manifest.json", "background.js", "injectManifest.js",
+    ...globSync(["lib/*.js", "options/*", "templates/*.json", "manifests/*.json"], { cwd: root })];
+  const references = new Set(runtime.flatMap((file) =>
+    [...readFileSync(join(root, file), "utf8").matchAll(/images\/([\w-]+\.png)/g)].map((match) => match[1]),
+  ));
+  assert.deepEqual([...references].sort(), ["icon128.png", "icon48.png", "icon512.png", "iconDisabled48.png"]);
+  assert.deepEqual(readdirSync(join(root, "images")).sort(), [...references].sort());
+});
 
 test("package is deterministic, excludes unsafe inputs, and rejects dirty tracked state", () => {
   const directory = mkdtempSync(join(tmpdir(), "pwa-package-"));
@@ -38,8 +49,7 @@ test("package is deterministic, excludes unsafe inputs, and rejects dirty tracke
     assert.deepEqual(readFileSync(archive), first);
     const entries = run("unzip", ["-Z1", archive]).toString().trim().split("\n");
     assert.deepEqual(entries.filter((entry) => entry.endsWith(".png")).sort(), [
-      "icon128.png", "icon48.png", "icon512.png", "iconBlue48.png", "iconBlue512.png",
-      "iconDisabled48.png", "iconDisabled512.png", "iconRed48.png", "iconRed512.png",
+      "icon128.png", "icon48.png", "icon512.png", "iconDisabled48.png",
     ].map((name) => `images/${name}`));
     for (const required of ["LICENSE", "THIRD_PARTY_NOTICES.md", "PRIVACY.md", "manifest.json"]) {
       assert.ok(entries.includes(required));

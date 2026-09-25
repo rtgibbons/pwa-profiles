@@ -14,9 +14,7 @@ const files = [
   "manifests/outlook.live.com.json", "manifests/outlook.office.com.json",
   "manifests/teams.microsoft.com.json", "manifests/x.com.json", "manifests/www.reddit.com.json",
   "images/icon48.png", "images/icon128.png", "images/icon512.png",
-  "images/iconBlue48.png", "images/iconBlue512.png",
-  "images/iconDisabled48.png", "images/iconDisabled512.png",
-  "images/iconRed48.png", "images/iconRed512.png",
+  "images/iconDisabled48.png",
   "LICENSE", "THIRD_PARTY_NOTICES.md", "PRIVACY.md",
 ].sort();
 const run = (command, args) => execFileSync(command, args, { env: { ...process.env, TZ: "UTC" } });
