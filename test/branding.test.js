@@ -63,12 +63,12 @@ test("public metadata and display copy use the exact PWA Profiles identity", () 
 test("toolbar transitions send complete state-specific icon maps and exact titles", async () => {
   const source = read("background.js");
   const calls = [];
-  const configuration = { name: "Asymmetric test" };
+  const configuration = { id: "asymmetric", name: "Asymmetric test" };
   let enabled = false;
   const context = {
     chrome: { permissions: { contains: async () => enabled }, action: {
       setIcon: async (value) => calls.push(value), setTitle: async (value) => calls.push(value),
-    } },
+    }, tabs: { sendMessage: async () => null } },
     getConfigurations: async () => [configuration],
     configurationForUrl: () => configuration,
     permissionOrigins: () => [],
@@ -89,7 +89,7 @@ test("toolbar transitions send complete state-specific icon maps and exact title
     { path: iconMap(false, [16, 32, 48]), tabId: 37 },
     { title: "PWA Profiles: Replacement manifest active", tabId: 37 },
   ]);
-  assert.match(source, /await setAction\(ENABLED_ICON, ENABLED_TEXT, sender.tab.id\)/);
+  assert.match(source, /await queueActionUpdate\(sender.tab.id, "injected"\)/);
 });
 
 test("compatibility identifiers remain independent of the public brand", () => {

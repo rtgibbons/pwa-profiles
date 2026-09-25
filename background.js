@@ -19,6 +19,7 @@ const DISABLED_TEXT = "PWA Profiles: No active profile";
 
 let reconciliation = Promise.resolve();
 let configurationMigration;
+let actionUpdates = Promise.resolve();
 
 chrome.runtime.onInstalled.addListener(() => queueReconciliation());
 chrome.runtime.onStartup.addListener(() => queueReconciliation());
@@ -28,11 +29,10 @@ chrome.storage.onChanged.addListener((changes, area) => {
 
 chrome.action.onClicked.addListener(() => chrome.runtime.openOptionsPage());
 
-chrome.tabs.onActivated.addListener(({ tabId }) => {
-  chrome.tabs.get(tabId).then(updateActionForTab).catch(() => {});
-});
-chrome.tabs.onUpdated.addListener((_tabId, changeInfo, tab) => {
-  if (changeInfo.url || changeInfo.status === "complete") updateActionForTab(tab);
+chrome.tabs.onActivated.addListener(({ tabId }) => queueActionUpdate(tabId));
+chrome.tabs.onUpdated.addListener((tabId, changeInfo) => {
+  const reset = Boolean(changeInfo.url || changeInfo.status === "loading");
+  if (reset || changeInfo.status === "complete") return queueActionUpdate(tabId, reset ? "navigation" : "refresh");
 });
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
@@ -66,12 +66,9 @@ async function handleMessage(message, sender) {
       if (!sender.tab?.url) return { ok: false, error: "Page URL is unavailable." };
       return getConfigurationForPage(sender.tab.url, sender.tab.id);
     case "manifestInjected":
-      if (sender.tab?.id && sender.tab.url) {
-        const configuration = configurationForUrl(await getConfigurations(), sender.tab.url);
-        if (configuration?.id === message.configurationId) {
-          await setAction(ENABLED_ICON, ENABLED_TEXT, sender.tab.id);
-        }
-      }
+      // Re-read the current document, not the notifying sender: a notification
+      // from a replaced document must not mark the next navigation as injected.
+      if (sender.tab?.id) await queueActionUpdate(sender.tab.id, "injected");
       return { ok: true };
     default:
       return { ok: false, error: "Unknown request." };
@@ -296,15 +293,40 @@ async function reconcile() {
   });
 }
 
-async function updateActionForTab(tab) {
+function queueActionUpdate(tabId, reason = "refresh") {
+  // Serialize writes so a slow pre-injection read cannot overwrite a later
+  // success or navigation reset. No per-tab state survives tab closure.
+  actionUpdates = actionUpdates.then(async () => {
+    const tab = await chrome.tabs.get(tabId);
+    await updateActionForTab(tab, reason);
+  }).catch(() => {}); // Tabs may close while an update is queued.
+  return actionUpdates;
+}
+
+async function updateActionForTab(tab, reason = "refresh") {
   if (!tab?.id || !tab.url) return;
   const configuration = configurationForUrl(await getConfigurations(), tab.url);
   const hasAccess =
     configuration &&
     (await chrome.permissions.contains({ origins: permissionOrigins(configuration.matchPatterns) }));
+  // The successful content script owns this document-scoped state. It outlives
+  // service-worker suspension, disappears with the document, and needs no DOM
+  // probing or persistent storage. Missing/failed injection has no responder.
+  // During loading the outgoing document may still answer. Activation must not
+  // undo a navigation reset; only a success notification or completion upgrades it.
+  const canReadState = hasAccess && reason !== "navigation" && (
+    tab.status !== "loading" || reason === "injected" ||
+    await chrome.action.getTitle({ tabId: tab.id }) === ENABLED_TEXT
+  );
+  const injected = canReadState && await chrome.tabs.sendMessage(
+    tab.id, { type: "getManifestState" }, { frameId: 0 },
+  ).catch(() => null);
   await setAction(
     hasAccess ? ENABLED_ICON : DISABLED_ICON,
-    hasAccess ? `PWA Profiles: ${configuration.name} profile enabled` : DISABLED_TEXT,
+    hasAccess
+      ? injected?.configurationId === configuration.id && injected.pageUrl === tab.url
+        ? ENABLED_TEXT : `PWA Profiles: ${configuration.name} profile enabled`
+      : DISABLED_TEXT,
     tab.id,
   );
 }

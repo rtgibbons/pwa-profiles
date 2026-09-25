@@ -35,6 +35,12 @@
     }).observe(document.head, { childList: true });
   }
 
+  // Register only after successful injection. The responder belongs to this
+  // document, so worker restarts retain success but new documents start fresh.
+  const pageUrl = location.href;
+  chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+    if (message?.type === "getManifestState") sendResponse({ configurationId: id, pageUrl });
+  });
   await chrome.runtime.sendMessage({ type: "manifestInjected", configurationId: id });
 })().catch((error) => console.error("PWA Profiles could not inject the manifest:", error));
 
