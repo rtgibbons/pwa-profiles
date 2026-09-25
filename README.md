@@ -1,12 +1,14 @@
-# Better PWAs
+# PWA Profiles – Custom Web Apps
 
 **Independent project: not affiliated with, sponsored by, or endorsed by any listed site or
 vendor. Product names and trademarks belong to their respective owners and identify compatible
 services only. No vendor logo artwork is distributed; bundled templates use neutral generated icons.**
 
-Better PWAs is a Chrome extension that helps websites feel more like real desktop apps. It lets
+PWA Profiles is a Chrome extension that helps websites feel more like real desktop apps. It lets
 you replace a site's web app manifest with one you control—without changing the website or sending
 your settings anywhere.
+
+Maintained by Ryan Gibbons at [rtgibbons/pwa-profiles](https://github.com/rtgibbons/pwa-profiles).
 
 This is useful when a site has an incomplete manifest, does not expose the window style you want,
 or is not installable as a Progressive Web App at all.
@@ -31,11 +33,11 @@ With a profile, you can:
 
 ## An easier starting point
 
-You do not have to write a manifest from scratch. Enter a website URL and Better PWAs will import
+You do not have to write a manifest from scratch. Enter a website URL and PWA Profiles will import
 its existing manifest. If the site does not have one, the extension builds a draft from metadata
 such as the page title, description, theme color, and icons.
 
-When no usable app icon exists, Better PWAs creates a tiny, deterministic gradient-and-stripes icon
+When no usable app icon exists, PWA Profiles creates a tiny, deterministic gradient-and-stripes icon
 for that site. It is generated locally and remains the same for the same hostname.
 
 The extension also includes read-only templates. Using one creates an editable copy, so the bundled
@@ -61,13 +63,13 @@ replace their obsolete icon references manually or recreate them from a current 
 > the manifest while creating the app, so installing first can leave the app using the site's old
 > manifest.
 
-1. Load Better PWAs and open its settings by clicking the extension icon or choosing
+1. Load PWA Profiles and open its settings by clicking the extension icon or choosing
    **Extension details → Extension options**.
 2. Select **New configuration**, import a website, or start from one of the templates.
 3. Review the site match pattern and manifest. Adjust the display modes, colors, icon, or advanced
    JSON as needed.
 4. Turn on **Enabled** and approve access to the requested site. This activates the profile.
-5. Open or reload the website so Better PWAs can apply the replacement manifest.
+5. Open or reload the website so PWA Profiles can apply the replacement manifest.
 6. Use the browser's **Install app** or **Create shortcut** action to create the app.
 
 If the app was already installed before its profile was enabled, uninstall the app and create it
@@ -75,6 +77,11 @@ again. Changing an installed app's identity-related manifest fields may also req
 
 To confirm the replacement is active, open the site's DevTools and check **Application →
 Manifest**. You should see the name, colors, display modes, and other values from your profile.
+
+Settings exports use `pwa-profiles-settings-YYYY-MM-DD.json`. Existing
+`better-pwas-settings-*.json` backups still import by content; imported profiles start disabled.
+The rebrand does not change storage keys or web app manifest IDs. Name and version changes do
+not transfer storage between extension IDs; keep the same extension installation when upgrading.
 
 ## Privacy
 

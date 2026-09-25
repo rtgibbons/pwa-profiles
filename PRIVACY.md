@@ -1,4 +1,4 @@
-Better PWAs does not collect, transmit, sell, or share personal information.
+PWA Profiles does not collect, transmit, sell, or share personal information.
 
 The extension stores user-created site configurations, web app manifests, and network rules in
 Chrome's local extension storage. This data stays on the user's device and is not available to the
