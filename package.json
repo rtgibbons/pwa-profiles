@@ -3,6 +3,7 @@
   "type": "module",
   "scripts": {
     "check": "node scripts/check.js",
-    "test": "node --test"
+    "test": "node --test",
+    "package": "node scripts/package.js"
   }
 }

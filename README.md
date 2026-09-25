@@ -83,3 +83,8 @@ Load this directory as an unpacked extension at `chrome://extensions` with Devel
 npm test
 npm run check
 ```
+
+After committing tracked changes, run `npm run package` to build and verify
+`dist/betterPWAs.zip` from an explicit runtime allowlist in clean tracked HEAD. Requires Node.js
+22 or newer, Git, and `unzip`. Repeated builds of the same commit are byte-identical. Untracked
+files and source-only artwork never enter the archive; LICENSE and notices are included.
