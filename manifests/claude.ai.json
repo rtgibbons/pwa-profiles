@@ -1,74 +1,16 @@
 {
-	"name": "Claude",
-	"id": "better-pwa/claude.ai",
-	"short_name": "Claude",
-	"start_url": "https://claude.ai/",
-	"scope": "https://claude.ai/",
-	"display": "standalone",
-	"theme_color": "#c15f3c",
-	"background_color": "hsl(49 26.8% 92%)",
-	"icons": [
-		{
-			"sizes": "192x192",
-			"src": "icons/claude.ai/claude-192.png",
-			"type": "image/png",
-			"purpose": "any"
-		},
-		{
-			"sizes": "512x512",
-			"src": "icons/claude.ai/claude-512.png",
-			"type": "image/png",
-			"purpose": "any"
-		},
-		{
-			"sizes": "128x128",
-			"src": "icons/claude.ai/claude-128-maskable.png",
-			"type": "image/png",
-			"purpose": "maskable"
-		},
-		{
-			"sizes": "192x192",
-			"src": "icons/claude.ai/claude-192-maskable.png",
-			"type": "image/png",
-			"purpose": "maskable"
-		},
-		{
-			"sizes": "512x512",
-			"src": "icons/claude.ai/claude-512-maskable.png",
-			"type": "image/png",
-			"purpose": "maskable"
-		},
-		{
-			"sizes": "16x16",
-			"src": "icons/claude.ai/claude-16-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		},
-		{
-			"sizes": "32x32",
-			"src": "icons/claude.ai/claude-32-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		},
-		{
-			"sizes": "48x48",
-			"src": "icons/claude.ai/claude-48-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		},
-		{
-			"sizes": "512x512",
-			"src": "icons/claude.ai/claude-512-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		}
-	],
-	"prefer_related_applications": true,
-	"related_applications": [
-		{
-			"platform": "play",
-			"url": "https://play.google.com/store/apps/details?id=com.anthropic.claude",
-			"id": "com.anthropic.claude"
-		}
-	]
+  "name": "Claude",
+  "id": "better-pwa/claude.ai",
+  "short_name": "Claude",
+  "start_url": "https://claude.ai/",
+  "scope": "https://claude.ai/",
+  "display": "standalone",
+  "theme_color": "#c15f3c",
+  "background_color": "hsl(49 26.8% 92%)",
+  "prefer_related_applications": true,
+  "related_applications": [{
+    "platform": "play",
+    "url": "https://play.google.com/store/apps/details?id=com.anthropic.claude",
+    "id": "com.anthropic.claude"
+  }]
 }

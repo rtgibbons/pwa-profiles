@@ -1,142 +1,35 @@
 {
-	"name": "Twitter",
-	"id": "better-pwa/x.com",
-	"short_name": "Twitter",
-	"start_url": "https://x.com/?utm_source=homescreen&utm_medium=shortcut",
-	"scope": "https://x.com/",
-	"display": "standalone",
-	"theme_color": "#1EA1F1",
-	"background_color": "#ffffff",
-	"gcm_sender_id": "49625052041",
-	"gcm_user_visible_only": true,
-	"icons": [
-		{
-			"sizes": "192x192",
-			"src": "icons/x.com/twitter-192.png",
-			"type": "image/png"
-		},
-		{
-			"sizes": "512x512",
-			"src": "icons/x.com/twitter-512.png",
-			"type": "image/png"
-		},
-		{
-			"sizes": "192x192",
-			"src": "icons/x.com/twitter-192-maskable.png",
-			"type": "image/png",
-			"purpose": "maskable"
-		},
-		{
-			"sizes": "512x512",
-			"src": "icons/x.com/twitter-512-maskable.png",
-			"type": "image/png",
-			"purpose": "maskable"
-		},
-		{
-			"sizes": "16x16",
-			"src": "icons/x.com/twitter-16-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		},
-		{
-			"sizes": "32x32",
-			"src": "icons/x.com/twitter-32-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		},
-		{
-			"sizes": "48x48",
-			"src": "icons/x.com/twitter-48-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		},
-		{
-			"sizes": "512x512",
-			"src": "icons/x.com/twitter-512-monochrome.png",
-			"type": "image/png",
-			"purpose": "monochrome"
-		}
-	],
-	"shortcuts": [
-		{
-			"name": "Tweet",
-			"url": "https://x.com/compose/post?utm_source=jumplist&utm_medium=shortcut",
-			"icons": [
-				{
-					"type": "image/png",
-					"sizes": "192x192",
-					"src": "icons/x.com/icon-compose.png"
-				}
-			]
-		},
-		{
-			"name": "Explore",
-			"url": "https://x.com/explore?utm_source=jumplist&utm_medium=shortcut",
-			"icons": [
-				{
-					"type": "image/png",
-					"sizes": "192x192",
-					"src": "icons/x.com/icon-search-stroke.png"
-				}
-			]
-		},
-		{
-			"name": "Notifications",
-			"url": "https://x.com/notifications?utm_source=jumplist&utm_medium=shortcut",
-			"icons": [
-				{
-					"type": "image/png",
-					"sizes": "192x192",
-					"src": "icons/x.com/icon-notifications-stroke.png"
-				}
-			]
-		},
-		{
-			"name": "Direct messages",
-			"url": "https://x.com/messages?utm_source=jumplist&utm_medium=shortcut",
-			"icons": [
-				{
-					"type": "image/png",
-					"sizes": "192x192",
-					"src": "icons/x.com/icon-messages-stroke.png"
-				}
-			]
-		}
-	],
-	"launch_handler": {
-		"route_to": "existing-client",
-		"navigate_existing_client": "never"
-	},
-	"share_target": {
-		"action": "https://x.com/compose/tweet",
-		"enctype": "multipart/form-data",
-		"method": "POST",
-		"params": {
-			"title": "title",
-			"text": "text",
-			"url": "url",
-			"files": [
-				{
-					"name": "externalMedia",
-					"accept": [
-						"image/jpeg",
-						"image/png",
-						"image/gif",
-						"video/quicktime",
-						"video/mp4"
-					]
-				}
-			]
-		}
-	},
-	"categories": ["social", "news", "magazines"],
-	"android_package_name": "com.twitter.android",
-	"prefer_related_applications": true,
-	"related_applications": [
-		{
-			"id": "com.twitter.android",
-			"platform": "play",
-			"url": "https://play.google.com/store/apps/details?id=com.twitter.android"
-		}
-	]
+  "name": "X",
+  "id": "better-pwa/x.com",
+  "short_name": "X",
+  "start_url": "https://x.com/?utm_source=homescreen&utm_medium=shortcut",
+  "scope": "https://x.com/",
+  "display": "standalone",
+  "gcm_sender_id": "49625052041",
+  "gcm_user_visible_only": true,
+  "shortcuts": [
+    { "name": "Post", "url": "https://x.com/compose/post?utm_source=jumplist&utm_medium=shortcut" },
+    { "name": "Explore", "url": "https://x.com/explore?utm_source=jumplist&utm_medium=shortcut" },
+    { "name": "Notifications", "url": "https://x.com/notifications?utm_source=jumplist&utm_medium=shortcut" },
+    { "name": "Direct messages", "url": "https://x.com/messages?utm_source=jumplist&utm_medium=shortcut" }
+  ],
+  "launch_handler": {
+    "route_to": "existing-client",
+    "navigate_existing_client": "never"
+  },
+  "share_target": {
+    "action": "https://x.com/compose/post",
+    "enctype": "multipart/form-data",
+    "method": "POST",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url",
+      "files": [{
+        "name": "externalMedia",
+        "accept": ["image/jpeg", "image/png", "image/gif", "video/quicktime", "video/mp4"]
+      }]
+    }
+  },
+  "categories": ["social", "news", "magazines"]
 }

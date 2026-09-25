@@ -8,6 +8,7 @@ import {
   permissionOrigins,
   validateConfiguration,
 } from "./lib/config.js";
+import { createGeneratedIcon } from "./lib/site-discovery.js";
 
 const CONTENT_SCRIPT_ID = "better-pwas-managed";
 const ENABLED_ICON = "images/icon48.png";
@@ -95,6 +96,10 @@ async function loadTemplates() {
       manifest: await fetch(chrome.runtime.getURL(template.manifestPath)).then((response) => {
         if (!response.ok) throw new Error(`Could not load ${template.manifestPath}.`);
         return response.json();
+      }).then((manifest) => {
+        const siteUrl = new URL(template.matchPatterns[0].replace(/\*$/, ""));
+        manifest.icons = [createGeneratedIcon(siteUrl)];
+        return manifest;
       }),
     })),
   );

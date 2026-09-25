@@ -4,7 +4,7 @@
     {
       "id": "slack",
       "name": "Slack",
-      "summary": "A standalone Slack app with bundled standard and maskable icons.",
+      "summary": "A standalone Slack app with a neutral generated icon.",
       "source": "Better PWAs",
       "matchPatterns": ["https://app.slack.com/*"],
       "manifestPath": "manifests/app.slack.com.json",
@@ -65,7 +65,7 @@
     {
       "id": "claude",
       "name": "Claude",
-      "summary": "A standalone Claude app with bundled maskable and monochrome icons.",
+      "summary": "A standalone Claude app with a neutral generated icon.",
       "source": "bmndc/betterPWAs",
       "matchPatterns": ["https://claude.ai/*"],
       "manifestPath": "manifests/claude.ai.json"
@@ -73,7 +73,7 @@
     {
       "id": "discord",
       "name": "Discord",
-      "summary": "A standalone Discord app with window controls overlay and bundled icons.",
+      "summary": "A standalone Discord app with window controls overlay.",
       "source": "bmndc/betterPWAs",
       "matchPatterns": ["https://discord.com/*"],
       "manifestPath": "manifests/discord.com.json"
@@ -104,28 +104,16 @@
     },
     {
       "id": "x",
-      "name": "X / Twitter",
-      "summary": "A standalone X app with shortcuts, sharing, and bundled icons.",
+      "name": "X",
+      "summary": "A standalone X app with shortcuts and sharing.",
       "source": "bmndc/betterPWAs",
       "matchPatterns": ["https://x.com/*"],
-      "manifestPath": "manifests/x.com.json",
-      "rules": [
-        {
-          "name": "Use manifest icon for notifications",
-          "enabled": true,
-          "priority": 1,
-          "action": { "type": "block" },
-          "condition": {
-            "regexFilter": "^https://abs\\.twimg\\.com/responsive-web/client-serviceworker/logo\\..*\\.png$",
-            "resourceTypes": ["image", "xmlhttprequest", "other"]
-          }
-        }
-      ]
+      "manifestPath": "manifests/x.com.json"
     },
     {
       "id": "reddit",
       "name": "Reddit",
-      "summary": "A minimal UI Reddit app with shortcuts and bundled icons.",
+      "summary": "A minimal UI Reddit app with shortcuts.",
       "source": "bmndc/betterPWAs",
       "matchPatterns": ["https://www.reddit.com/*"],
       "manifestPath": "manifests/www.reddit.com.json"
