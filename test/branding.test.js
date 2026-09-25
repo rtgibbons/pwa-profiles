@@ -139,6 +139,26 @@ test("Profile Stack PNGs are RGBA with exact dimensions and a transparent safe b
       }
       const alpha = [...pixels].filter((_, index) => index % 4 === 3);
       assert.ok(alpha.includes(255) && alpha.includes(0), path);
+      const palette = disabled ? ["60656a", "aeb4b8", "c9cdd0", "f4f5f5"] : ["176b45", "67c994", "c8e8d5", "ffffff"];
+      const colors = new Set();
+      const occupiedX = [], occupiedY = [];
+      for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {
+        const offset = (y * size + x) * 4;
+        if (pixels[offset + 3] === 255) colors.add(pixels.subarray(offset, offset + 3).toString("hex"));
+        if (pixels[offset + 3]) { occupiedX.push(x); occupiedY.push(y); }
+      }
+      for (const color of palette) assert.ok(colors.has(color), `${path} missing canonical palette color ${color}`);
+      // SVG's centered stroke extends from 32 to 480 on its 512-unit grid.
+      for (const occupied of [occupiedX, occupiedY]) {
+        assert.equal(Math.min(...new Set(occupied)), Math.floor(size / 16), `${path} lower visible bound`);
+        assert.equal(Math.max(...new Set(occupied)), Math.ceil(size * 15 / 16) - 1, `${path} upper visible bound`);
+      }
+      // Interior sample locations selected independently from the canonical geometry:
+      // top keyline, bottom base, exposed rear card, front card, profile aperture.
+      for (const [x, y, color] of [[256, 48, 1], [256, 432, 0], [128, 192, 2], [224, 320, 3], [320, 224, 0]]) {
+        const offset = (Math.floor(y * size / 512) * size + Math.floor(x * size / 512)) * 4;
+        assert.equal(pixels.subarray(offset, offset + 4).toString("hex"), `${palette[color]}ff`, `${path} landmark ${x},${y}`);
+      }
       // One fully clear outer pixel even at 16px; larger rasters retain proportional padding.
       const border = Math.max(1, Math.floor(size / 32));
       for (let y = 0; y < size; y++) for (let x = 0; x < size; x++) {

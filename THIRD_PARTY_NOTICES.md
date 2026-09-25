@@ -23,7 +23,7 @@ neutral icon generation. Template routes and product names identify compatible s
 | --- | --- | --- |
 | `images/icon16.png`, `images/icon32.png`, `images/icon48.png`, `images/icon128.png`, `images/icon512.png` | Project-authored Profile Stack identity: original flat vector geometry, MIT; no third-party marks | Release |
 | `images/iconDisabled16.png`, `images/iconDisabled32.png`, `images/iconDisabled48.png` | Project-authored Profile Stack disabled-state palette, MIT | Release |
-| `visd/pwa-profiles-profile-stack.svg` | Canonical editable source for the project-authored Profile Stack identity, MIT | Source only, excluded from release |
+| `visd/pwa-profiles-profile-stack.svg`, `scripts/render-icons.js` | Canonical editable geometry and explicit active-to-disabled palette export mechanism for the project-authored Profile Stack identity, MIT; render with `node scripts/render-icons.js` (requires librsvg's `rsvg-convert`) | Source only, excluded from release |
 | Generated template icons (`lib/site-discovery.js`) | Project-authored deterministic hostname-based gradient and stripes, MIT; no vendor artwork or remote image dependency | Generated locally at runtime |
 
 No vendor logo artwork is distributed in the current source tree or release archive. Removed

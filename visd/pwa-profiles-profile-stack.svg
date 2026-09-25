@@ -11,7 +11,8 @@
     16px pixel cadence: 1px safe area/keyline, 2px card offset, 3px aperture.
   </metadata>
 
-  <!-- Canonical active artwork. Apply the disabled palette from metadata for monochrome exports. -->
+  <!-- Canonical artwork. node scripts/render-icons.js exports both states using
+       librsvg and the explicit active-to-disabled palette mapping in that script. -->
   <g id="profile-stack">
     <rect x="48" y="48" width="416" height="416" rx="96" fill="#176B45" stroke="#67C994" stroke-width="32"/>
     <rect x="96" y="96" width="256" height="256" rx="64" fill="#C8E8D5"/>
