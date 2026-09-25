@@ -1,0 +1,164 @@
+{
+	"name": "Reddit",
+	"id": "better-pwa/www.reddit.com",
+	"short_name": "Reddit",
+	"start_url": "https://www.reddit.com/",
+	"scope": "https://www.reddit.com/",
+	"description": "Dive into anything",
+	"display": "minimal-ui",
+	"theme_color": "#ff4500",
+	"background_color": "#ffffff",
+	"icons": [
+		{
+			"src": "icons/www.reddit.com/reddit-128-maskable.png",
+			"sizes": "128x128",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "icons/www.reddit.com/reddit-192-maskable.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "icons/www.reddit.com/reddit-512-maskable.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "maskable"
+		},
+		{
+			"src": "icons/www.reddit.com/reddit-16-monochrome.png",
+			"sizes": "16x16",
+			"type": "image/png",
+			"purpose": "monochrome"
+		},
+		{
+			"src": "icons/www.reddit.com/reddit-32-monochrome.png",
+			"sizes": "32x32",
+			"type": "image/png",
+			"purpose": "monochrome"
+		},
+		{
+			"src": "icons/www.reddit.com/reddit-48-monochrome.png",
+			"sizes": "48x48",
+			"type": "image/png",
+			"purpose": "monochrome"
+		},
+		{
+			"src": "icons/www.reddit.com/reddit-512-monochrome.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "monochrome"
+		},
+		{
+			"src": "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-36x36.png",
+			"sizes": "36x36",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-48x48.png",
+			"sizes": "48x48",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-72x72.png",
+			"sizes": "72x72",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-96x96.png",
+			"sizes": "96x96",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-144x144.png",
+			"sizes": "144x144",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-192x192.png",
+			"sizes": "192x192",
+			"type": "image/png",
+			"purpose": "any"
+		},
+		{
+			"src": "https://www.redditstatic.com/desktop2x/img/favicon/android-icon-512x512.png",
+			"sizes": "512x512",
+			"purpose": "any"
+		}
+	],
+	"shortcuts": [
+		{
+			"name": "Home",
+			"short_name": "Home",
+			"url": "/",
+			"icons": [
+				{
+					"src": "https://www.redditstatic.com/desktop2x/img/favicon/shortcuts/icon_home_fill.png",
+					"sizes": "192x192"
+				}
+			]
+		},
+		{
+			"name": "Popular",
+			"short_name": "Popular",
+			"url": "/r/popular",
+			"icons": [
+				{
+					"src": "https://www.redditstatic.com/desktop2x/img/favicon/shortcuts/icon_popular_fill.png",
+					"sizes": "192x192"
+				}
+			]
+		},
+		{
+			"name": "All",
+			"short_name": "All",
+			"url": "/r/all",
+			"icons": [
+				{
+					"src": "https://www.redditstatic.com/desktop2x/img/favicon/shortcuts/icon_all_fill.png",
+					"sizes": "192x192"
+				}
+			]
+		},
+		{
+			"name": "Search",
+			"short_name": "Search",
+			"url": "/search",
+			"icons": [
+				{
+					"src": "https://www.redditstatic.com/desktop2x/img/favicon/shortcuts/icon_search_fill.png",
+					"sizes": "192x192"
+				}
+			]
+		},
+		{
+			"name": "Chat",
+			"short_name": "Chat",
+			"url": "/chat",
+			"icons": [
+				{
+					"src": "https://www.redditstatic.com/desktop2x/img/favicon/shortcuts/icon_chat_fill.png",
+					"sizes": "192x192"
+				}
+			]
+		},
+		{
+			"name": "Notifications",
+			"short_name": "Notifications",
+			"url": "/notifications",
+			"icons": [
+				{
+					"src": "https://www.redditstatic.com/desktop2x/img/favicon/shortcuts/icon_notifications_fill.png",
+					"sizes": "192x192"
+				}
+			]
+		}
+	]
+}

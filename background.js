@@ -9,6 +9,7 @@ import {
   validateConfiguration,
 } from "./lib/config.js";
 import { createGeneratedIcon } from "./lib/site-discovery.js";
+import { migrateTemplateConfigurations } from "./lib/migrations.js";
 
 const CONTENT_SCRIPT_ID = "better-pwas-managed";
 const ENABLED_ICON = "images/icon48.png";
@@ -17,6 +18,7 @@ const ENABLED_TEXT = "Better PWAs: replacement manifest active";
 const DISABLED_TEXT = "Better PWAs: no active configuration";
 
 let reconciliation = Promise.resolve();
+let configurationMigration;
 
 chrome.runtime.onInstalled.addListener(() => queueReconciliation());
 chrome.runtime.onStartup.addListener(() => queueReconciliation());
@@ -108,8 +110,21 @@ async function loadTemplates() {
 async function getConfigurations() {
   const stored = await chrome.storage.local.get([CONFIGURATIONS_KEY, SCHEMA_VERSION_KEY]);
   if (Array.isArray(stored[CONFIGURATIONS_KEY])) {
-    if (stored[SCHEMA_VERSION_KEY] !== SCHEMA_VERSION) {
-      await chrome.storage.local.set({ [SCHEMA_VERSION_KEY]: SCHEMA_VERSION });
+    if ((stored[SCHEMA_VERSION_KEY] ?? 1) < SCHEMA_VERSION) {
+      // Startup and page requests can read the same legacy snapshot concurrently.
+      // Share the migration so a delayed reader cannot overwrite a subsequent user save.
+      configurationMigration ??= (async () => {
+        const configurations = migrateTemplateConfigurations(stored[CONFIGURATIONS_KEY], await loadTemplates());
+        await chrome.storage.local.set({
+          [CONFIGURATIONS_KEY]: configurations,
+          [SCHEMA_VERSION_KEY]: SCHEMA_VERSION,
+        });
+        return configurations;
+      })().catch((error) => {
+        configurationMigration = undefined;
+        throw error;
+      });
+      return configurationMigration;
     }
     return stored[CONFIGURATIONS_KEY];
   }

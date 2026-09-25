@@ -5,7 +5,7 @@ import { mkdirSync } from "node:fs";
 // Deliberately enumerate files, not directories or globs. New runtime files require review.
 const files = [
   "manifest.json", "background.js", "injectManifest.js",
-  "lib/config.js", "lib/site-discovery.js",
+  "lib/config.js", "lib/site-discovery.js", "lib/migrations.js",
   "options/options.html", "options/options.css", "options/options.js",
   "templates/catalog.json",
   "manifests/app.slack.com.json", "manifests/github.com.json",

@@ -1,0 +1,134 @@
+{
+  "version": 1,
+  "templates": [
+    {
+      "id": "slack",
+      "name": "Slack",
+      "summary": "A standalone Slack app with bundled standard and maskable icons.",
+      "source": "Better PWAs",
+      "matchPatterns": ["https://app.slack.com/*"],
+      "manifestPath": "manifests/app.slack.com.json",
+      "enabledByDefault": true
+    },
+    {
+      "id": "github",
+      "name": "GitHub",
+      "summary": "A minimal UI GitHub app with experimental tabbed display support.",
+      "source": "Better PWAs",
+      "matchPatterns": ["https://github.com/*"],
+      "manifestPath": "manifests/github.com.json",
+      "enabledByDefault": true,
+      "rules": [
+        {
+          "name": "Allow replacement manifest",
+          "enabled": false,
+          "priority": 1,
+          "action": {
+            "type": "modifyHeaders",
+            "responseHeaders": [
+              { "header": "content-security-policy", "operation": "remove" }
+            ]
+          },
+          "condition": {
+            "urlFilter": "||github.com/",
+            "resourceTypes": ["main_frame"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "canva",
+      "name": "Canva",
+      "summary": "A standalone Canva app with experimental tabbed display support.",
+      "source": "Better PWAs",
+      "matchPatterns": ["https://www.canva.com/*"],
+      "manifestPath": "manifests/www.canva.com.json",
+      "enabledByDefault": true
+    },
+    {
+      "id": "smh",
+      "name": "Sydney Morning Herald",
+      "summary": "A minimal UI app for the Sydney Morning Herald.",
+      "source": "Better PWAs",
+      "matchPatterns": ["https://www.smh.com.au/*"],
+      "manifestPath": "manifests/www.smh.com.au.json",
+      "enabledByDefault": true
+    },
+    {
+      "id": "notion",
+      "name": "Notion",
+      "summary": "A minimal UI Notion app with experimental tabbed display support.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://app.notion.com/*"],
+      "manifestPath": "manifests/app.notion.com.json"
+    },
+    {
+      "id": "claude",
+      "name": "Claude",
+      "summary": "A standalone Claude app with bundled maskable and monochrome icons.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://claude.ai/*"],
+      "manifestPath": "manifests/claude.ai.json"
+    },
+    {
+      "id": "discord",
+      "name": "Discord",
+      "summary": "A standalone Discord app with window controls overlay and bundled icons.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://discord.com/*"],
+      "manifestPath": "manifests/discord.com.json"
+    },
+    {
+      "id": "outlook-live",
+      "name": "Outlook.com",
+      "summary": "A minimal UI app for personal Outlook accounts.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://outlook.live.com/*"],
+      "manifestPath": "manifests/outlook.live.com.json"
+    },
+    {
+      "id": "outlook-office",
+      "name": "Outlook for Microsoft 365",
+      "summary": "A minimal UI app for Microsoft 365 Outlook accounts.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://outlook.office.com/*"],
+      "manifestPath": "manifests/outlook.office.com.json"
+    },
+    {
+      "id": "teams",
+      "name": "Microsoft Teams",
+      "summary": "A standalone Teams app with launch and protocol handlers.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://teams.microsoft.com/*"],
+      "manifestPath": "manifests/teams.microsoft.com.json"
+    },
+    {
+      "id": "x",
+      "name": "X / Twitter",
+      "summary": "A standalone X app with shortcuts, sharing, and bundled icons.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://x.com/*"],
+      "manifestPath": "manifests/x.com.json",
+      "rules": [
+        {
+          "name": "Use manifest icon for notifications",
+          "enabled": true,
+          "priority": 1,
+          "action": { "type": "block" },
+          "condition": {
+            "regexFilter": "^https://abs\\.twimg\\.com/responsive-web/client-serviceworker/logo\\..*\\.png$",
+            "resourceTypes": ["image", "xmlhttprequest", "other"]
+          }
+        }
+      ]
+    },
+    {
+      "id": "reddit",
+      "name": "Reddit",
+      "summary": "A minimal UI Reddit app with shortcuts and bundled icons.",
+      "source": "bmndc/betterPWAs",
+      "matchPatterns": ["https://www.reddit.com/*"],
+      "manifestPath": "manifests/www.reddit.com.json"
+    }
+  ]
+}

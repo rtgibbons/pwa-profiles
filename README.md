@@ -48,6 +48,13 @@ with adapted templates/software from MIT-licensed
 [bmndc/betterPWAs at d10a17c](https://github.com/bmndc/betterPWAs/commit/d10a17ca4dc928be96f4acc4367a9202133b11d4).
 See [third-party notices and the asset ledger](THIRD_PARTY_NOTICES.md) and [LICENSE](LICENSE).
 
+On upgrade, saved profiles with a known `templateId` have obsolete bundled/vendor template
+icons replaced by neutral generated icons, including legacy shortcut artwork. Recognized X
+defaults and its obsolete notification-icon rule are updated without resetting other settings.
+Custom icons, rules, colors, and profile edits are retained. Custom/imported profiles and profiles
+whose template identity was manually removed cannot be safely attributed and are left unchanged;
+replace their obsolete icon references manually or recreate them from a current template.
+
 ## How to use it
 
 > **Create and enable the site profile before you create or install the web app.** Chromium reads
