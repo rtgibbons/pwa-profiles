@@ -64,6 +64,20 @@ test("manifest grants only storage/scripting and optional HTTP(S); runtime has n
   }
 });
 
+test("pre-import UI, privacy policy and submission copy disclose HTTP transport risks consistently", () => {
+  const html = read("options/options.html");
+  const disclosure = html.match(/<small id="http-disclosure">([^<]+)<\/small>/)[1];
+  const phrases = ["Prefer HTTPS.", "HTTP is unencrypted and can be observed or modified in transit.",
+    "HTTP support is for localhost, legacy, intranet, and other user-selected sites.",
+    "Avoid sensitive values in HTTP URLs or content."];
+  for (const text of [disclosure, read("PRIVACY.md"), read("CWS_SUBMISSION.md")]) {
+    for (const phrase of phrases) assert.ok(text.replace(/\s+/g, " ").includes(phrase), phrase);
+  }
+  assert.ok(html.indexOf('id="http-disclosure"') < html.indexOf('id="discover-site"'));
+  assert.match(read("PRIVACY.md"), /extension does not encrypt HTTP traffic/);
+  assert.match(read("CWS_SUBMISSION.md"), /extension does not encrypt HTTP traffic/);
+});
+
 test("concrete origin extraction rejects broad hosts and ignores paths; broad existing grants cover overlap", () => {
   assert.deepEqual(config.permissionOrigins(["*://example.com/private/*", "https://example.com/public/*"]),
     ["http://example.com/*", "https://example.com/*"]);

@@ -33,6 +33,10 @@ server can still receive ordinary connection information, including your IP addr
 URL. Do not put secrets, passwords, authentication tokens or sensitive query parameters in
 profile fields, manifests, URLs or imported files.
 
+Prefer HTTPS. HTTP is unencrypted and can be observed or modified in transit. HTTP support
+is for localhost, legacy, intranet, and other user-selected sites. Avoid sensitive values in
+HTTP URLs or content. The extension does not encrypt HTTP traffic.
+
 Discovery does not automatically follow redirects. Readable same-origin redirects are followed
 for at most five hops; cross-origin destinations are rejected before another fetch. If Chrome
 hides a redirect destination, discovery stops and asks you to enter the final URL directly.
@@ -55,6 +59,8 @@ profile with missing access stays inactive and displays **Needs site access**. W
 profiles must be edited to concrete hosts. A wildcard scheme requires separate HTTP and HTTPS
 grants. Match-pattern paths narrow injection; Chrome host grants cover the whole hostname for
 that scheme, across paths and ports.
+Explicit ports in profile match patterns are rejected rather than silently removed. Invalid
+saved or imported patterns stay available for editing and export, but cannot activate a profile.
 
 Disabling removes site access when no other enabled profile uses it. After a disable, edit,
 delete, replacement or import is saved, unused actual host grants are removed. Shared grants,

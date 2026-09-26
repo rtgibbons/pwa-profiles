@@ -19,8 +19,10 @@ installable web app manifest, display behavior, icons, and colors on explicitly 
 - **Optional hosts `http://*/*`, `https://*/*`:** Users choose arbitrary websites, so the optional
   declaration must cover web origins. At runtime, request only one concrete scheme/hostname
   per explicit Grant access or Import website click. Never request wildcard hosts or all sites.
-  Fresh installs have no site grants or profiles. HTTP supports user-selected local and other
-  HTTP web apps; it is not requested globally. Enabling alone never prompts. Missing access is
+  Fresh installs have no site grants or profiles. Prefer HTTPS. HTTP is unencrypted and can be
+  observed or modified in transit. HTTP support is for localhost, legacy, intranet, and other
+  user-selected sites. Avoid sensitive values in HTTP URLs or content. HTTP is not requested
+  globally. Enabling alone never prompts. Missing access is
   visibly inactive. Disabling removes site access when no other enabled profile uses it.
   Edits/deletion/imports also release unused actual grants after persistence. Shared and broad
   legacy grants remain only while needed. Discovery releases a newly acquired grant in finally
@@ -53,6 +55,8 @@ by the developer:
 Disclose remote preview and applied-manifest asset contacts (possibly third-party hosts), and
 ordinary server connection information. Discovery fetches omit credentials/referrers, but
 remote images follow browser networking rules. The packaged templates' icons are local.
+The pre-import UI warns that HTTP is unencrypted; the extension does not encrypt HTTP traffic.
+Recommend HTTPS and avoid sensitive values in HTTP URLs or content, as disclosed in the policy.
 
 Certify only after confirming final code: no sale/transfers to third parties for unrelated
 purposes; no advertising, profiling, creditworthiness/lending use, or human review; use only
