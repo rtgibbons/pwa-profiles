@@ -73,6 +73,7 @@ test("toolbar transitions send complete state-specific icon maps and exact title
     configurationForUrl: () => configuration,
     permissionOrigins: () => [],
     hasSiteAccess: async () => enabled,
+    activeConfigurationForUrl: async () => enabled ? configuration : null,
   };
   runInNewContext(source.slice(source.indexOf("const ENABLED_ICON"), source.indexOf("let reconciliation")) +
     source.slice(source.indexOf("async function updateActionForTab")), context);

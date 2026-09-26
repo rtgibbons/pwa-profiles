@@ -32,6 +32,7 @@ const elements = {
 let templates = [];
 let configurations = [];
 let accessStates = new Map();
+let stateRequest = 0;
 let toastTimer;
 
 document.querySelector("#new-configuration").addEventListener("click", () => openEditor());
@@ -64,20 +65,23 @@ chrome.permissions.onAdded.addListener(loadState);
 chrome.permissions.onRemoved.addListener(loadState);
 
 async function loadState() {
+  const request = ++stateRequest;
   const response = await chrome.runtime.sendMessage({ type: "getState" });
   if (!response?.ok) return showToast(response?.error || "Could not load settings.");
-  templates = response.templates;
-  configurations = response.configurations;
-  accessStates = new Map();
-  for (const configuration of configurations) {
+  const nextAccess = new Map();
+  for (const configuration of response.configurations) {
     const access = { missingOrigins: [] };
-    accessStates.set(configuration.id, access);
+    nextAccess.set(configuration.id, access);
     try {
       for (const origin of permissionOrigins(configuration.matchPatterns)) {
         if (!(await chrome.permissions.contains({ origins: [origin] }))) access.missingOrigins.push(origin);
       }
     } catch (error) { access.error = error.message; }
   }
+  if (request !== stateRequest) return;
+  templates = response.templates;
+  configurations = response.configurations;
+  accessStates = nextAccess;
   renderConfigurations();
   renderTemplates();
 }
@@ -519,9 +523,13 @@ async function discoverSite() {
   } catch (error) {
     setDiscoveryStatus(`Could not import website: ${error.message}`, true);
   } finally {
-    if (!preexisting) {
-      const released = await chrome.runtime.sendMessage({ type: "releaseDiscoveryAccess", origin });
-      if (!released?.ok) showToast("Could not release temporary access. Review Chrome's extension site access settings.");
+    try {
+      if (!preexisting) {
+        const released = await chrome.runtime.sendMessage({ type: "releaseDiscoveryAccess", origin });
+        if (!released?.ok) throw new Error("Could not release access.");
+      }
+    } catch {
+      showToast("Could not release temporary access. Review Chrome's extension site access settings.");
     }
     button.disabled = false;
     button.textContent = "Import website";
@@ -581,7 +589,13 @@ async function handleConfigurationClick(event) {
   if (button.dataset.action === "grant") {
     const origin = button.dataset.origin;
     if (!permissionOrigins(configuration.matchPatterns).includes(origin)) return;
-    const granted = await chrome.permissions.request({ origins: [origin] });
+    let granted;
+    try {
+      granted = await chrome.permissions.request({ origins: [origin] });
+    } catch (error) {
+      showToast(`Could not request site access: ${error.message}`);
+      return;
+    }
     await chrome.runtime.sendMessage({ type: "reconcile" });
     await loadState();
     showToast(granted ? "Site access granted. Reload matching pages to apply." : "Site access was not granted. Profile remains enabled but inactive.");

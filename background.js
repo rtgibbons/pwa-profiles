@@ -211,9 +211,16 @@ async function replaceConfigurations(configurations, schemaVersion = 1) {
   return { ok: true };
 }
 
+async function activeConfigurationForUrl(url) {
+  for (const configuration of await getConfigurations()) {
+    if (configurationForUrl([configuration], url) && await hasSiteAccess(configuration)) return configuration;
+  }
+  return null;
+}
+
 async function getConfigurationForPage(url, tabId) {
-  const configuration = configurationForUrl(await getConfigurations(), url);
-  if (!configuration || !(await hasSiteAccess(configuration))) return { ok: true, configuration: null };
+  const configuration = await activeConfigurationForUrl(url);
+  if (!configuration) return { ok: true, configuration: null };
   const overrideCss = activeTabColorOverrideCss(configuration);
   if (overrideCss) {
     await chrome.scripting.insertCSS({
@@ -325,10 +332,8 @@ function queueActionUpdate(tabId, reason = "refresh") {
 async function updateActionForTab(tab, reason = "refresh") {
   if (!tab?.id) return;
   if (!tab.url || !/^https?:\/\//.test(tab.url)) return setAction(DISABLED_ICON, DISABLED_TEXT, tab.id);
-  const configuration = configurationForUrl(await getConfigurations(), tab.url);
-  const hasAccess =
-    configuration &&
-    (await hasSiteAccess(configuration));
+  const configuration = await activeConfigurationForUrl(tab.url);
+  const hasAccess = Boolean(configuration);
   // The successful content script owns this document-scoped state. It outlives
   // service-worker suspension, disappears with the document, and needs no DOM
   // probing or persistent storage. Missing/failed injection has no responder.

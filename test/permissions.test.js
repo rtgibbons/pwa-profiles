@@ -49,8 +49,8 @@ function worker(initial, origins = []) {
     hasSiteAccess: (value) => config.hasSiteAccess(value, chrome.permissions),
     fetch: async (url) => ({ ok: true, json: async () => JSON.parse(read(url.replace("chrome-extension://test/", ""))) }),
   });
-  const send = (message) => new Promise((resolve) => chrome.runtime.onMessage.handler(message,
-    { url: "chrome-extension://test/options/options.html" }, resolve));
+  const send = (message, sender = { url: "chrome-extension://test/options/options.html" }) => new Promise((resolve) => chrome.runtime.onMessage.handler(message,
+    sender, resolve));
   return { chrome, stored, calls, send, scripts: () => scripts, grant: (value) => { origins = value; } };
 }
 
@@ -91,6 +91,47 @@ test("enabled without access is inert, permission events register narrowed paths
   assert.equal(w.stored.configurations[0].enabled, true);
 });
 
+test("inaccessible earlier overlap cannot shadow an accessible profile or inject CSS", async () => {
+  const first = { ...profile("blocked", ["*://example.com/app/*"]), pageOverrides: { activeTabColor: "#123456" } };
+  const w = worker({ configurations: [first, profile("active")], configurationSchemaVersion: 3 }, ["https://example.com/*"]);
+  const result = await w.send({ type: "getConfigurationForPage" }, { tab: { id: 7, url: "https://example.com/app/start" } });
+  assert.equal(result.configuration.id, "active");
+  assert.equal(w.calls.some(([type]) => type === "css"), false);
+});
+
+test("malformed archival values are rejected, arbitrary array entries are inert", async () => {
+  const w = worker({ configurations: [], configurationSchemaVersion: 3 });
+  for (const value of ["not an array", null, {}, 12]) {
+    const result = await w.send({ type: "replaceConfigurations", configurations: [{ ...profile("bad"), legacyRules: value }], schemaVersion: 3 });
+    assert.equal(result.ok, false);
+    assert.deepEqual(w.stored.configurations, []);
+  }
+  const result = await w.send({ type: "replaceConfigurations", configurations: [{ ...profile("good"), legacyRules: [null, "opaque", 12, {}] }], schemaVersion: 3 });
+  assert.equal(result.ok, true);
+  assert.deepEqual(plain(w.stored.configurations[0].legacyRules), [null, "opaque", 12, {}]);
+});
+
+test("grant action requests just the chosen origin, denial does not save or disable", async () => {
+  const source = read("options/options.js");
+  for (const granted of [false, true]) {
+    const configuration = profile("gesture", ["*://example.com/path/*"]);
+    const requests = [], messages = [], notices = [];
+    const context = { configurations: [configuration], ...config,
+      chrome: { permissions: { request: async (value) => { requests.push(plain(value)); return granted; } },
+        runtime: { sendMessage: async (value) => messages.push(plain(value)) } },
+      loadState: async () => {}, showToast: (message) => notices.push(message),
+    };
+    runInNewContext(source.slice(source.indexOf("async function handleConfigurationClick"), source.indexOf("function handleTemplateClick")), context);
+    await context.handleConfigurationClick({ target: { closest: () => ({
+      dataset: { action: "grant", origin: "http://example.com/*" }, closest: () => ({ dataset: { id: "gesture" } }),
+    }) } });
+    assert.deepEqual(requests, [{ origins: ["http://example.com/*"] }]);
+    assert.deepEqual(messages, [{ type: "reconcile" }]);
+    assert.equal(configuration.enabled, true);
+    assert.match(notices[0], granted ? /Reload/ : /inactive/);
+  }
+});
+
 test("disable, edit, delete and replace persist before removing only unused actual grants", async () => {
   const w = worker({ configurations: [profile("a"), profile("b", ["https://other.example.com/*"])], configurationSchemaVersion: 3 },
     ["https://*.example.com/*", "http://unused.test/*"]);
@@ -112,7 +153,7 @@ test("disable, edit, delete and replace persist before removing only unused actu
   assert.deepEqual(w.calls.at(-1), ["remove", ["https://example.com/*"]]);
 });
 
-test("shared concrete grant survives first disable; discovery release observes newly enabled profile", async () => {
+test("shared concrete grant survives first disable and discovery release", async () => {
   const w = worker({ configurations: [profile("a"), profile("b")], configurationSchemaVersion: 3 }, ["https://example.com/*"]);
   await w.send({ type: "deleteConfiguration", id: "a" });
   assert.equal(w.calls.some(([type]) => type === "remove"), false);
@@ -120,6 +161,38 @@ test("shared concrete grant survives first disable; discovery release observes n
   assert.equal(w.calls.some(([type]) => type === "remove"), false);
   await w.send({ type: "saveConfiguration", configuration: { ...profile("b"), enabled: false } });
   assert.deepEqual(w.calls.at(-1), ["remove", ["https://example.com/*"]]);
+});
+
+test("discovery release serializes behind a profile becoming enabled during its fetch", async () => {
+  const w = worker({ configurations: [{ ...profile("race"), enabled: false }], configurationSchemaVersion: 3 }, ["https://example.com/*"]);
+  const [saved, released] = await Promise.all([
+    w.send({ type: "saveConfiguration", configuration: profile("race") }),
+    w.send({ type: "releaseDiscoveryAccess", origin: "https://example.com/*" }),
+  ]);
+  assert.equal(saved.ok, true);
+  assert.equal(released.ok, true);
+  assert.equal(w.calls.some(([type]) => type === "remove"), false);
+  assert.deepEqual(w.scripts()[0].matches, ["https://example.com/app/*"]);
+});
+
+test("a delayed permission refresh cannot overwrite a newer options state", async () => {
+  let finishOld;
+  let calls = 0;
+  const renders = [];
+  const context = {
+    permissionOrigins: config.permissionOrigins,
+    chrome: { runtime: { sendMessage: async () => ({ ok: true, templates: [], configurations: [profile(++calls === 1 ? "old" : "new")] }) },
+      permissions: { contains: () => calls === 1 ? new Promise(resolve => { finishOld = resolve; }) : Promise.resolve(false) } },
+    showToast() {}, renderTemplates() {}, renderConfigurations() { renders.push(context.current()); },
+  };
+  const source = read("options/options.js");
+  runInNewContext(`let stateRequest=0, configurations=[], templates=[], accessStates;\n${source.slice(source.indexOf("async function loadState"), source.indexOf("function renderConfigurations"))}\nfunction current(){return configurations[0].id;}`, context);
+  const old = context.loadState();
+  await new Promise(setImmediate);
+  await context.loadState();
+  finishOld(true);
+  await old;
+  assert.deepEqual(renders, ["new"]);
 });
 
 test("concurrent migration, reads and saves cannot overwrite new state", async () => {
