@@ -4,7 +4,6 @@ import {
   SCHEMA_VERSION_KEY,
   activeTabColorOverrideCss,
   configurationForUrl,
-  createConfiguration,
   grantIsNeeded,
   hasSiteAccess,
   permissionOrigins,
@@ -156,10 +155,7 @@ async function readConfigurations() {
     return stored[CONFIGURATIONS_KEY];
   }
 
-  const templates = await loadTemplates();
-  const configurations = templates
-    .filter((template) => template.enabledByDefault)
-    .map((template) => createConfiguration(template, `default-${template.id}`));
+  const configurations = [];
   await chrome.storage.local.set({
     [CONFIGURATIONS_KEY]: configurations,
     [SCHEMA_VERSION_KEY]: SCHEMA_VERSION,

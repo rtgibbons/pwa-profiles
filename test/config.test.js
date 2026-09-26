@@ -190,4 +190,5 @@ test("creating from a template produces an independent editable copy", () => {
   assert.deepEqual(template.matchPatterns, ["https://example.com/*"]);
   assert.equal(configuration.id, "configuration-id");
   assert.equal(configuration.templateId, "example");
+  assert.equal(configuration.enabled, false, "even legacy defaults must create disabled copies");
 });

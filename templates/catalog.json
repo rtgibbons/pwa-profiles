@@ -12,8 +12,7 @@
         "path": "manifests/app.slack.com.js"
       },
       "matchPatterns": ["https://app.slack.com/*"],
-      "manifestPath": "manifests/app.slack.com.json",
-      "enabledByDefault": true
+      "manifestPath": "manifests/app.slack.com.json"
     },
     {
       "id": "github",
@@ -26,8 +25,7 @@
         "path": "manifests/github.com.js"
       },
       "matchPatterns": ["https://github.com/*"],
-      "manifestPath": "manifests/github.com.json",
-      "enabledByDefault": true
+      "manifestPath": "manifests/github.com.json"
     },
     {
       "id": "canva",
@@ -40,8 +38,7 @@
         "path": "manifests/www.canva.com.js"
       },
       "matchPatterns": ["https://www.canva.com/*"],
-      "manifestPath": "manifests/www.canva.com.json",
-      "enabledByDefault": true
+      "manifestPath": "manifests/www.canva.com.json"
     },
     {
       "id": "smh",
@@ -54,8 +51,7 @@
         "path": "manifests/www.smh.com.au.js"
       },
       "matchPatterns": ["https://www.smh.com.au/*"],
-      "manifestPath": "manifests/www.smh.com.au.json",
-      "enabledByDefault": true
+      "manifestPath": "manifests/www.smh.com.au.json"
     },
     {
       "id": "notion",

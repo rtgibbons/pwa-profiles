@@ -611,7 +611,7 @@ function handleTemplateClick(event) {
   const button = event.target.closest('button[data-action="use-template"]');
   if (!button) return;
   const template = templates.find((item) => item.id === button.closest(".card").dataset.id);
-  const configuration = createConfiguration({ ...template, enabledByDefault: false });
+  const configuration = createConfiguration(template);
   configuration.id = "";
   openEditor(configuration);
 }

@@ -14,6 +14,8 @@ test("catalog identities and exact first match patterns are unambiguous", () => 
     assert.equal(new Set(catalog.templates.map((item) => item[field])).size, 12);
   }
   for (const template of catalog.templates) {
+    assert.equal("enabledByDefault" in template, false);
+    assert.equal("rules" in template, false);
     assert.match(template.matchPatterns[0], /^https:\/\/[^/*]+\/\*$/);
     assert.match(template.manifestPath, /^manifests\/[^/]+\.json$/);
     const { source } = template;
@@ -77,8 +79,10 @@ test("background assembles all twelve templates offline with valid neutral icons
   ));
   assert.equal(state.ok, true, state.error);
   assert.equal(state.templates.length, 12);
-  assert.equal(state.configurations.length, 4);
+  assert.deepEqual(state.configurations, []);
+  assert.deepEqual(stored, { configurations: [], configurationSchemaVersion: 3 });
   for (const template of state.templates) {
+    assert.equal(createConfiguration(template).enabled, false);
     assert.deepEqual(validateConfiguration(createConfiguration(template, `test-${template.id}`)), [], template.id);
     assert.deepEqual(template.manifest.icons, [createGeneratedIcon(template.matchPatterns[0].slice(0, -1))]);
   }
