@@ -31,7 +31,7 @@ test("package is deterministic, excludes unsafe inputs, and rejects dirty tracke
       mkdirSync(join(directory, path), { recursive: true });
       writeFileSync(join(directory, path, "forbidden.xcf"), "must not ship");
     }
-    for (const path of ["betterPWAs.zip", "images/vendor.png", "README.md"]) {
+    for (const path of ["betterPWAs.zip", "images/vendor.png", "README.md", "CWS_SUBMISSION.md"]) {
       writeFileSync(join(directory, path), "must not ship");
     }
     run("git", ["init", "-q"]);
@@ -54,7 +54,7 @@ test("package is deterministic, excludes unsafe inputs, and rejects dirty tracke
     for (const required of ["LICENSE", "THIRD_PARTY_NOTICES.md", "PRIVACY.md", "manifest.json"]) {
       assert.ok(entries.includes(required));
     }
-    assert.doesNotMatch(entries.join("\n"), /visd|\.xcf|\.zip|README|scripts\/|test\/|\.agents|manifests\/icons/);
+    assert.doesNotMatch(entries.join("\n"), /visd|\.xcf|\.zip|README|CWS_SUBMISSION|scripts\/|test\/|\.agents|manifests\/icons/);
     for (const entry of entries.filter((name) => /^manifests\/.*\.json$/.test(name))) {
       assert.doesNotMatch(run("unzip", ["-p", archive, entry]).toString(), /"icons"\s*:|"src"\s*:\s*"https?:/);
     }
