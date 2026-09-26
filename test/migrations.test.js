@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import test from "node:test";
 import { validateConfiguration } from "../lib/config.js";
-import { migrateTemplateConfigurations } from "../lib/migrations.js";
+import { migrateTemplateConfigurations, migrateConfigurations, preserveLegacyRules } from "../lib/migrations.js";
 
 const read = (path) => JSON.parse(readFileSync(new URL(path, import.meta.url), "utf8"));
 const templates = read("../templates/catalog.json").templates;
@@ -97,7 +97,7 @@ test("X migration distinguishes stale defaults from edited text, routes, and sim
   assert.deepEqual(migrateTemplateConfigurations([migrated], templates), [migrated]);
 });
 
-test("startup persists schema 2, reconciles migrated rules, and injects without deleted-image fetches", async (t) => {
+test("startup persists schema 3 and injects without deleted-image fetches", async (t) => {
   let handler;
   let finishReconciliation;
   const reconciled = new Promise((resolve) => { finishReconciliation = resolve; });
@@ -121,9 +121,7 @@ test("startup persists schema 2, reconciles migrated rules, and injects without 
     } },
     action: { onClicked: event }, tabs: { onActivated: event, onUpdated: event },
     permissions: { contains: async () => true },
-    scripting: { getRegisteredContentScripts: async () => [], registerContentScripts: async () => {} },
-    declarativeNetRequest: { getDynamicRules: async () => [{ id: 73 }],
-      updateDynamicRules: async (value) => finishReconciliation(value) },
+    scripting: { getRegisteredContentScripts: async () => [], registerContentScripts: async () => finishReconciliation() },
   };
   t.after(() => { delete globalThis.chrome; });
   await import("../background.js");
@@ -135,8 +133,8 @@ test("startup persists schema 2, reconciles migrated rules, and injects without 
     assert.equal(response.ok, true, response.error);
     assert.match(response.configuration.manifest.icons[0].src, /^data:image\/svg\+xml;base64,/);
   }
-  assert.deepEqual(await reconciled, { removeRuleIds: [73], addRules: [] });
-  assert.equal(stored.configurationSchemaVersion, 2);
+  await reconciled;
+  assert.equal(stored.configurationSchemaVersion, 3);
   assert.equal(writes.length, 1);
   assert.ok(writes[0].configurations);
   const fetchCount = requests.length;
@@ -151,5 +149,23 @@ test("startup persists schema 2, reconciles migrated rules, and injects without 
   assert.equal(requests.length, fetchCount, "injection requires no asset fetch");
   const state = await send({ type: "getState" }, { url: "chrome-extension://test/options/options.html" });
   assert.deepEqual(state.configurations, stored.configurations);
-  assert.equal(writes.length, 1, "reading schema 2 must not rewrite storage");
+  assert.equal(writes.length, 1, "reading schema 3 must not rewrite storage");
+});
+
+test("schema 3 combines every array combination in order, without changing other fields", () => {
+  for (const rules of [undefined, [], [null, { opaque: "old" }]]) {
+    for (const legacyRules of [undefined, [], [42, { untouched: true }]]) {
+      const input = { id: "stable", enabled: true, createdAt: "then", updatedAt: "now", custom: { a: 7 } };
+      if (rules !== undefined) input.rules = rules;
+      if (legacyRules !== undefined) input.legacyRules = legacyRules;
+      const expected = { id: "stable", enabled: true, createdAt: "then", updatedAt: "now", custom: { a: 7 } };
+      const combined = [...(legacyRules ?? []), ...(rules ?? [])];
+      if (combined.length) expected.legacyRules = combined;
+      const before = structuredClone(input);
+      assert.deepEqual(preserveLegacyRules([input]), [expected]);
+      assert.deepEqual(preserveLegacyRules([expected]), [expected]);
+      assert.deepEqual(input, before);
+    }
+  }
+  assert.deepEqual(migrateConfigurations(legacy, 1, templates), preserveLegacyRules(migrateTemplateConfigurations(legacy, templates)));
 });

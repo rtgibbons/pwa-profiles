@@ -9,7 +9,7 @@ import {
   validateConfiguration,
 } from "./lib/config.js";
 import { createGeneratedIcon } from "./lib/site-discovery.js";
-import { migrateTemplateConfigurations } from "./lib/migrations.js";
+import { migrateConfigurations, preserveLegacyRules } from "./lib/migrations.js";
 
 const CONTENT_SCRIPT_ID = "better-pwas-managed";
 const ENABLED_ICON = { 16: "images/icon16.png", 32: "images/icon32.png", 48: "images/icon48.png" };
@@ -91,7 +91,6 @@ async function loadTemplates() {
     catalog.templates.map(async (template) => ({
       ...template,
       replaceExistingManifest: template.replaceExistingManifest !== false,
-      rules: template.rules ?? [],
       manifest: await fetch(chrome.runtime.getURL(template.manifestPath)).then((response) => {
         if (!response.ok) throw new Error(`Could not load ${template.manifestPath}.`);
         return response.json();
@@ -111,7 +110,7 @@ async function getConfigurations() {
       // Startup and page requests can read the same legacy snapshot concurrently.
       // Share the migration so a delayed reader cannot overwrite a subsequent user save.
       configurationMigration ??= (async () => {
-        const configurations = migrateTemplateConfigurations(stored[CONFIGURATIONS_KEY], await loadTemplates());
+        const configurations = migrateConfigurations(stored[CONFIGURATIONS_KEY], stored[SCHEMA_VERSION_KEY] ?? 1, await loadTemplates());
         await chrome.storage.local.set({
           [CONFIGURATIONS_KEY]: configurations,
           [SCHEMA_VERSION_KEY]: SCHEMA_VERSION,
@@ -138,6 +137,7 @@ async function getConfigurations() {
 }
 
 async function saveConfiguration(configuration) {
+  [configuration] = preserveLegacyRules([configuration]);
   const errors = validateConfiguration(configuration);
   if (errors.length) return { ok: false, error: errors.join(" ") };
 
@@ -164,6 +164,7 @@ async function deleteConfiguration(id) {
 
 async function replaceConfigurations(configurations) {
   if (!Array.isArray(configurations)) return { ok: false, error: "Import must contain an array." };
+  configurations = migrateConfigurations(configurations, 1, await loadTemplates());
   const errors = configurations.flatMap((configuration, index) =>
     validateConfiguration(configuration).map((error) => `Configuration ${index + 1}: ${error}`),
   );
@@ -278,19 +279,6 @@ async function reconcile() {
     ]);
   }
 
-  const oldRules = await chrome.declarativeNetRequest.getDynamicRules();
-  const rules = enabled.flatMap((configuration) =>
-    configuration.rules
-      .filter((rule) => rule.enabled !== false)
-      .map((rule) => {
-        const { name: _name, enabled: _enabled, id: _id, ...declarativeRule } = rule;
-        return declarativeRule;
-      }),
-  );
-  await chrome.declarativeNetRequest.updateDynamicRules({
-    removeRuleIds: oldRules.map((rule) => rule.id),
-    addRules: rules.map((rule, index) => ({ ...rule, id: index + 1 })),
-  });
 }
 
 function queueActionUpdate(tabId, reason = "refresh") {

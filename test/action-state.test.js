@@ -19,7 +19,7 @@ test("document-owned injection state survives completion, activation and worker 
   const profile = { id: "test-profile", name: "Example", enabled: true, matchPatterns: ["https://example.org/*"], rules: [] };
   const chrome = {
     runtime: { onInstalled: event(), onStartup: event(), onMessage: event() },
-    storage: { onChanged: event(), local: { get: async () => ({ configurations: [profile], configurationSchemaVersion: 2 }) } },
+    storage: { onChanged: event(), local: { get: async () => ({ configurations: [profile], configurationSchemaVersion: 3 }) } },
     action: { onClicked: event(), getTitle: async () => title,
       setTitle: async (value) => { title = value.title; }, setIcon: async (value) => { icon = value.path; } },
     tabs: { onActivated: event(), onUpdated: event(),

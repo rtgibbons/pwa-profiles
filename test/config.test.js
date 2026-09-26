@@ -53,18 +53,18 @@ test("configuration lookup chooses the first enabled match", () => {
   assert.equal(configurationForUrl(configurations, "https://other.example/inbox"), undefined);
 });
 
-test("configuration validation catches invalid manifests and rules", () => {
+test("configuration validation catches invalid manifests and non-array archival data", () => {
   const errors = validateConfiguration({
     name: "Test",
     matchPatterns: ["not a match pattern"],
     manifest: { name: "Test" },
-    rules: [{ action: { type: "block" } }],
+    legacyRules: {},
   });
   assert.deepEqual(errors, [
     "Every match pattern must use Chrome match-pattern syntax.",
     "Manifest must contain start_url.",
     "Manifest must include a square PNG, SVG, or WebP icon of at least 144px with purpose 'any'.",
-    "Rule 1 must contain action and condition.",
+    "Legacy rule data must be a JSON array.",
   ]);
 });
 

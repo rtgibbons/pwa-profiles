@@ -51,7 +51,7 @@ test("public metadata and display copy use the exact PWA Profiles identity", () 
   assert.match(html, /<title>PWA Profiles settings<\/title>/);
   assert.match(html, /aria-label="PWA Profiles settings"/);
   assert.match(html, /<span>PWA Profiles<\/span>/);
-  assert.match(html.replace(/\s+/g, " "), /Choose where PWA Profiles runs, customize each web app manifest, and manage its network rules—all stored locally in your browser\./);
+  assert.match(html.replace(/\s+/g, " "), /Choose where PWA Profiles runs and customize each web app manifest—all stored locally in your browser\./);
   assert.match(html, /src="\.\.\/images\/icon128.png"/);
   assert.match(read("injectManifest.js"), /console.error\("PWA Profiles could not inject the manifest:"/);
   // Deliberately scoped: attribution, legacy fixtures, and internal identifiers are not public copy.
@@ -95,7 +95,7 @@ test("toolbar transitions send complete state-specific icon maps and exact title
 test("compatibility identifiers remain independent of the public brand", () => {
   assert.equal(CONFIGURATIONS_KEY, "configurations");
   assert.equal(SCHEMA_VERSION_KEY, "configurationSchemaVersion");
-  assert.equal(SCHEMA_VERSION, 2);
+  assert.equal(SCHEMA_VERSION, 3);
   assert.match(read("background.js"), /const CONTENT_SCRIPT_ID = "better-pwas-managed"/);
   assert.match(read("injectManifest.js"), /link.dataset.betterPwas = id/);
   assert.match(read("lib/site-discovery.js"), /id: `\$\{url.origin\}\/better-pwa\/\$\{url.hostname\}`/);

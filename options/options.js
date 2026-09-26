@@ -95,14 +95,8 @@ function renderConfigurations() {
     top.append(title, toggle);
 
     const meta = div("card-meta");
-    const enabledRuleCount = configuration.rules.filter((rule) => rule.enabled !== false).length;
     meta.append(
       pill(configuration.enabled ? "Active" : "Inactive", configuration.enabled),
-      pill(
-        configuration.rules.length
-          ? `${enabledRuleCount}/${configuration.rules.length} network rules enabled`
-          : "No network rules",
-      ),
       pill(configuration.replaceExistingManifest ? "Replaces manifest" : "Adds manifest"),
     );
     const tabColor = resolvedActiveTabColor(configuration);
@@ -133,7 +127,6 @@ function renderTemplates() {
     card.append(heading(template.name), paragraph(template.summary));
     const meta = div("card-meta");
     meta.append(pill(template.matchPatterns[0].replace(/^https?:\/\//, "").replace(/\/\*$/, "")));
-    if (template.rules.length) meta.append(pill(`${template.rules.length} network rule`));
     const actions = div("card-actions");
     const source = document.createElement("span");
     source.className = "source";
@@ -168,7 +161,6 @@ function openEditor(configuration) {
       display: "standalone",
       icons: [],
     },
-    rules: [],
   };
   document.querySelector("#editor-title").textContent = value.id ? `Edit ${value.name}` : "New configuration";
   document.querySelector("#configuration-id").value = value.id;
@@ -188,7 +180,6 @@ function openEditor(configuration) {
   updateColorValue();
   syncDisplayControls(value.manifest);
   syncThemeColorControls(value.manifest);
-  document.querySelector("#rules-json").value = JSON.stringify(value.rules, null, 2);
   document.querySelector("#site-url").value = "";
   setDiscoveryStatus("");
   elements.error.textContent = "";
@@ -232,7 +223,6 @@ async function saveEditor(event) {
             : null,
       },
       manifest: JSON.parse(document.querySelector("#manifest-json").value),
-      rules: JSON.parse(document.querySelector("#rules-json").value),
     };
   } catch (error) {
     elements.error.textContent = `Invalid JSON: ${error.message}`;

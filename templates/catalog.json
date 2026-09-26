@@ -27,24 +27,7 @@
       },
       "matchPatterns": ["https://github.com/*"],
       "manifestPath": "manifests/github.com.json",
-      "enabledByDefault": true,
-      "rules": [
-        {
-          "name": "Allow replacement manifest",
-          "enabled": false,
-          "priority": 1,
-          "action": {
-            "type": "modifyHeaders",
-            "responseHeaders": [
-              { "header": "content-security-policy", "operation": "remove" }
-            ]
-          },
-          "condition": {
-            "urlFilter": "||github.com/",
-            "resourceTypes": ["main_frame"]
-          }
-        }
-      ]
+      "enabledByDefault": true
     },
     {
       "id": "canva",
