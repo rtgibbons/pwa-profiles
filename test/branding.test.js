@@ -17,7 +17,7 @@ test("exports use the new filename while old filenames remain content-importable
   let blob;
   let imported;
   const context = {
-    configurations, Blob,
+    configurations, Blob, SCHEMA_VERSION,
     Date: class extends Date { constructor() { super("2026-09-25T23:59:00Z"); } },
     URL: { createObjectURL(value) { blob = value; return "blob:test"; }, revokeObjectURL() {} },
     document: { createElement: () => anchor }, setTimeout: (fn) => fn(),
@@ -27,10 +27,10 @@ test("exports use the new filename while old filenames remain content-importable
   runInNewContext(source.slice(source.indexOf("function exportConfigurations()"), source.indexOf("function actionButtons()")), context);
   context.exportConfigurations();
   assert.equal(anchor.download, "pwa-profiles-settings-2026-09-25.json");
-  assert.deepEqual(JSON.parse(await blob.text()), { version: 1, configurations });
+  assert.deepEqual(JSON.parse(await blob.text()), { version: 1, schemaVersion: 3, configurations });
   const event = { target: { files: [{ name: "better-pwas-settings-2024-04-03.json", text: () => blob.text() }], value: "legacy-file" } };
   await context.importConfigurations(event);
-  assert.deepEqual(JSON.parse(JSON.stringify(imported)), { type: "replaceConfigurations", configurations });
+  assert.deepEqual(JSON.parse(JSON.stringify(imported)), { type: "replaceConfigurations", configurations, schemaVersion: 3 });
   assert.equal(event.target.value, "");
 });
 
@@ -72,6 +72,7 @@ test("toolbar transitions send complete state-specific icon maps and exact title
     getConfigurations: async () => [configuration],
     configurationForUrl: () => configuration,
     permissionOrigins: () => [],
+    hasSiteAccess: async () => enabled,
   };
   runInNewContext(source.slice(source.indexOf("const ENABLED_ICON"), source.indexOf("let reconciliation")) +
     source.slice(source.indexOf("async function updateActionForTab")), context);

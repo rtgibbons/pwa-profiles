@@ -117,6 +117,8 @@ h1 { font-size: clamp(38px, 5vw, 62px); letter-spacing: -.045em; line-height: 1;
 .pill.active { background: var(--accent-soft); color: var(--accent-dark); }
 .card-actions { align-items: center; border-top: 1px solid #edf0eb; display: flex; gap: 8px; justify-content: space-between; margin-top: auto; padding-top: 18px; }
 .card-actions .button { min-height: 36px; padding: 7px 12px; }
+.card-actions:has([data-action="grant"]) { flex-wrap: wrap; margin-top: 12px; }
+.card-actions [data-action="grant"], .card p { overflow-wrap: anywhere; }
 .source { color: #7b847e; font-size: 12px; }
 .empty { align-items: center; background: var(--surface); border: 1px dashed #bac5bb; border-radius: 16px; color: var(--muted); display: flex; flex-direction: column; grid-column: 1 / -1; padding: 52px; text-align: center; }
 .empty strong { color: var(--ink); font-size: 17px; margin-bottom: 5px; }

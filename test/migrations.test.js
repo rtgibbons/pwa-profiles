@@ -119,8 +119,8 @@ test("startup persists schema 3 and injects without deleted-image fetches", asyn
       get: async () => structuredClone(stored),
       set: async (value) => { writes.push(structuredClone(value)); Object.assign(stored, value); },
     } },
-    action: { onClicked: event }, tabs: { onActivated: event, onUpdated: event },
-    permissions: { contains: async () => true },
+    action: { onClicked: event }, tabs: { onActivated: event, onUpdated: event, query: async () => [] },
+    permissions: { contains: async () => true, onAdded: event, onRemoved: event },
     scripting: { getRegisteredContentScripts: async () => [], registerContentScripts: async () => finishReconciliation() },
   };
   t.after(() => { delete globalThis.chrome; });

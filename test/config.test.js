@@ -39,7 +39,7 @@ test("wildcard schemes expand into requestable optional origins", () => {
   assert.deepEqual(permissionOrigins(["*://example.com/*", "https://other.example/app/*"]), [
     "http://example.com/*",
     "https://example.com/*",
-    "https://other.example/app/*",
+    "https://other.example/*",
   ]);
 });
 

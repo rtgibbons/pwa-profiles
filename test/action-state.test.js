@@ -22,7 +22,7 @@ test("document-owned injection state survives completion, activation and worker 
     storage: { onChanged: event(), local: { get: async () => ({ configurations: [profile], configurationSchemaVersion: 3 }) } },
     action: { onClicked: event(), getTitle: async () => title,
       setTitle: async (value) => { title = value.title; }, setIcon: async (value) => { icon = value.path; } },
-    tabs: { onActivated: event(), onUpdated: event(),
+    tabs: { onActivated: event(), onUpdated: event(), query: async () => [],
       get: async () => { if (!tab) throw new Error("Tab closed"); return { ...tab }; },
       sendMessage: async (id, message, options) => {
         assert.equal(id, 41);
@@ -33,11 +33,11 @@ test("document-owned injection state survives completion, activation and worker 
         return documentState;
       },
     },
-    permissions: { contains: async () => true },
+    permissions: { contains: async () => true, onAdded: event(), onRemoved: event() },
     scripting: { getRegisteredContentScripts: async () => [], registerContentScripts: async () => {} },
     declarativeNetRequest: { getDynamicRules: async () => [], updateDynamicRules: async () => {} },
   };
-  const startWorker = () => runInNewContext(source.slice(source.indexOf("const CONTENT_SCRIPT_ID")), { ...config, chrome });
+  const startWorker = () => runInNewContext(source.slice(source.indexOf("const CONTENT_SCRIPT_ID")), { ...config, chrome, hasSiteAccess: (profile) => config.hasSiteAccess(profile, chrome.permissions) });
   const updated = async (change) => {
     if (change.status && tab) tab.status = change.status;
     await chrome.tabs.onUpdated.handler(41, change, tab);
@@ -109,4 +109,10 @@ test("document-owned injection state survives completion, activation and worker 
   tab = { id: 41, url: "https://example.org/reopened" };
   await updated({ status: "loading" });
   assert.equal(title, configured);
+  tab = { id: 41 };
+  await activated();
+  assert.equal(title, disabled, "missing URL must reset stale state without tabs permission");
+  tab = { id: 41, url: "chrome://extensions/" };
+  await activated();
+  assert.equal(title, disabled);
 });

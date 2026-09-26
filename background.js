@@ -5,6 +5,8 @@ import {
   activeTabColorOverrideCss,
   configurationForUrl,
   createConfiguration,
+  grantIsNeeded,
+  hasSiteAccess,
   permissionOrigins,
   validateConfiguration,
 } from "./lib/config.js";
@@ -18,11 +20,13 @@ const ENABLED_TEXT = "PWA Profiles: Replacement manifest active";
 const DISABLED_TEXT = "PWA Profiles: No active profile";
 
 let reconciliation = Promise.resolve();
-let configurationMigration;
+let configurationOperations = Promise.resolve();
 let actionUpdates = Promise.resolve();
 
 chrome.runtime.onInstalled.addListener(() => queueReconciliation());
 chrome.runtime.onStartup.addListener(() => queueReconciliation());
+chrome.permissions.onAdded.addListener(() => queueReconciliation());
+chrome.permissions.onRemoved.addListener(() => queueReconciliation());
 chrome.storage.onChanged.addListener((changes, area) => {
   if (area === "local" && changes[CONFIGURATIONS_KEY]) queueReconciliation();
 });
@@ -55,13 +59,25 @@ async function handleMessage(message, sender) {
       };
     case "saveConfiguration":
       assertManagementSender(sender);
-      return saveConfiguration(message.configuration);
+      return mutateConfigurations(() => saveConfiguration(message.configuration));
     case "deleteConfiguration":
       assertManagementSender(sender);
-      return deleteConfiguration(message.id);
+      return mutateConfigurations(() => deleteConfiguration(message.id));
     case "replaceConfigurations":
       assertManagementSender(sender);
-      return replaceConfigurations(message.configurations);
+      return mutateConfigurations(() => replaceConfigurations(message.configurations, message.schemaVersion));
+    case "releaseDiscoveryAccess":
+      assertManagementSender(sender);
+      return mutateConfigurations(async () => {
+        const [origin] = permissionOrigins([message.origin]);
+        if (origin !== message.origin) throw new Error("Expected one concrete origin.");
+        await removeUnusedAccess(await readConfigurations(), [origin]);
+        return { ok: true };
+      });
+    case "reconcile":
+      assertManagementSender(sender);
+      await queueReconciliation();
+      return { ok: true };
     case "getConfigurationForPage":
       if (!sender.tab?.url) return { ok: false, error: "Page URL is unavailable." };
       return getConfigurationForPage(sender.tab.url, sender.tab.id);
@@ -103,24 +119,39 @@ async function loadTemplates() {
   );
 }
 
-async function getConfigurations() {
+function serializeConfigurations(operation) {
+  const result = configurationOperations.then(operation);
+  configurationOperations = result.catch(() => {});
+  return result;
+}
+
+function getConfigurations() {
+  return serializeConfigurations(readConfigurations);
+}
+
+async function mutateConfigurations(operation) {
+  const result = await serializeConfigurations(operation);
+  await queueReconciliation();
+  return result;
+}
+
+async function removeUnusedAccess(configurations, candidates) {
+  const { origins = [] } = await chrome.permissions.getAll();
+  const unused = origins.filter((origin) => (!candidates || candidates.includes(origin)) &&
+    !grantIsNeeded(origin, configurations));
+  if (unused.length) await chrome.permissions.remove({ origins: unused });
+}
+
+async function readConfigurations() {
   const stored = await chrome.storage.local.get([CONFIGURATIONS_KEY, SCHEMA_VERSION_KEY]);
   if (Array.isArray(stored[CONFIGURATIONS_KEY])) {
     if ((stored[SCHEMA_VERSION_KEY] ?? 1) < SCHEMA_VERSION) {
-      // Startup and page requests can read the same legacy snapshot concurrently.
-      // Share the migration so a delayed reader cannot overwrite a subsequent user save.
-      configurationMigration ??= (async () => {
-        const configurations = migrateConfigurations(stored[CONFIGURATIONS_KEY], stored[SCHEMA_VERSION_KEY] ?? 1, await loadTemplates());
-        await chrome.storage.local.set({
-          [CONFIGURATIONS_KEY]: configurations,
-          [SCHEMA_VERSION_KEY]: SCHEMA_VERSION,
-        });
-        return configurations;
-      })().catch((error) => {
-        configurationMigration = undefined;
-        throw error;
+      const configurations = migrateConfigurations(stored[CONFIGURATIONS_KEY], stored[SCHEMA_VERSION_KEY] ?? 1, await loadTemplates());
+      await chrome.storage.local.set({
+        [CONFIGURATIONS_KEY]: configurations,
+        [SCHEMA_VERSION_KEY]: SCHEMA_VERSION,
       });
-      return configurationMigration;
+      return configurations;
     }
     return stored[CONFIGURATIONS_KEY];
   }
@@ -141,7 +172,7 @@ async function saveConfiguration(configuration) {
   const errors = validateConfiguration(configuration);
   if (errors.length) return { ok: false, error: errors.join(" ") };
 
-  const configurations = await getConfigurations();
+  const configurations = await readConfigurations();
   const index = configurations.findIndex((item) => item.id === configuration.id);
   const value = {
     ...structuredClone(configuration),
@@ -153,18 +184,20 @@ async function saveConfiguration(configuration) {
   if (index === -1) configurations.push(value);
   else configurations[index] = value;
   await chrome.storage.local.set({ [CONFIGURATIONS_KEY]: configurations });
+  await removeUnusedAccess(configurations);
   return { ok: true, configuration: value };
 }
 
 async function deleteConfiguration(id) {
-  const configurations = (await getConfigurations()).filter((item) => item.id !== id);
+  const configurations = (await readConfigurations()).filter((item) => item.id !== id);
   await chrome.storage.local.set({ [CONFIGURATIONS_KEY]: configurations });
+  await removeUnusedAccess(configurations);
   return { ok: true };
 }
 
-async function replaceConfigurations(configurations) {
+async function replaceConfigurations(configurations, schemaVersion = 1) {
   if (!Array.isArray(configurations)) return { ok: false, error: "Import must contain an array." };
-  configurations = migrateConfigurations(configurations, 1, await loadTemplates());
+  configurations = migrateConfigurations(configurations, schemaVersion, await loadTemplates());
   const errors = configurations.flatMap((configuration, index) =>
     validateConfiguration(configuration).map((error) => `Configuration ${index + 1}: ${error}`),
   );
@@ -177,13 +210,14 @@ async function replaceConfigurations(configurations) {
     createdAt: configuration.createdAt || new Date().toISOString(),
     updatedAt: new Date().toISOString(),
   }));
-  await chrome.storage.local.set({ [CONFIGURATIONS_KEY]: imported });
+  await chrome.storage.local.set({ [CONFIGURATIONS_KEY]: imported, [SCHEMA_VERSION_KEY]: SCHEMA_VERSION });
+  await removeUnusedAccess(imported);
   return { ok: true };
 }
 
 async function getConfigurationForPage(url, tabId) {
   const configuration = configurationForUrl(await getConfigurations(), url);
-  if (!configuration) return { ok: true, configuration: null };
+  if (!configuration || !(await hasSiteAccess(configuration))) return { ok: true, configuration: null };
   const overrideCss = activeTabColorOverrideCss(configuration);
   if (overrideCss) {
     await chrome.scripting.insertCSS({
@@ -259,7 +293,7 @@ async function reconcile() {
   const configurations = await getConfigurations();
   const enabled = [];
   for (const configuration of configurations.filter((item) => item.enabled)) {
-    if (await chrome.permissions.contains({ origins: permissionOrigins(configuration.matchPatterns) })) {
+    if (await hasSiteAccess(configuration)) {
       enabled.push(configuration);
     }
   }
@@ -278,7 +312,8 @@ async function reconcile() {
       },
     ]);
   }
-
+  const tabs = await chrome.tabs.query({});
+  await Promise.all(tabs.map((tab) => queueActionUpdate(tab.id)));
 }
 
 function queueActionUpdate(tabId, reason = "refresh") {
@@ -292,11 +327,12 @@ function queueActionUpdate(tabId, reason = "refresh") {
 }
 
 async function updateActionForTab(tab, reason = "refresh") {
-  if (!tab?.id || !tab.url) return;
+  if (!tab?.id) return;
+  if (!tab.url || !/^https?:\/\//.test(tab.url)) return setAction(DISABLED_ICON, DISABLED_TEXT, tab.id);
   const configuration = configurationForUrl(await getConfigurations(), tab.url);
   const hasAccess =
     configuration &&
-    (await chrome.permissions.contains({ origins: permissionOrigins(configuration.matchPatterns) }));
+    (await hasSiteAccess(configuration));
   // The successful content script owns this document-scoped state. It outlives
   // service-worker suspension, disappears with the document, and needs no DOM
   // probing or persistent storage. Missing/failed injection has no responder.

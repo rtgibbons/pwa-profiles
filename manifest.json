@@ -26,18 +26,11 @@
   },
   "permissions": [
     "storage",
-    "tabs",
     "scripting"
   ],
   "background": {
     "service_worker": "background.js",
     "type": "module"
   },
-  "host_permissions": [
-    "https://www.smh.com.au/*",
-    "https://app.slack.com/*",
-    "https://www.canva.com/*",
-    "https://github.com/*"
-  ],
   "optional_host_permissions": ["http://*/*", "https://*/*"]
 }

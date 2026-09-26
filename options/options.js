@@ -1,4 +1,5 @@
 import {
+  SCHEMA_VERSION,
   createConfiguration,
   derivedActiveTabColor,
   editableHexColor,
@@ -11,6 +12,7 @@ import {
 } from "../lib/config.js";
 import {
   createGeneratedIcon,
+  fetchSameOrigin,
   inferManifest,
   normalizeSiteUrl,
   originMatchPattern,
@@ -29,6 +31,7 @@ const elements = {
 
 let templates = [];
 let configurations = [];
+let accessStates = new Map();
 let toastTimer;
 
 document.querySelector("#new-configuration").addEventListener("click", () => openEditor());
@@ -57,12 +60,24 @@ document.querySelector("#manifest-theme-color").addEventListener("input", update
 document.querySelector("#manifest-theme-color-value").addEventListener("input", updateThemeColorFromText);
 
 await loadState();
+chrome.permissions.onAdded.addListener(loadState);
+chrome.permissions.onRemoved.addListener(loadState);
 
 async function loadState() {
   const response = await chrome.runtime.sendMessage({ type: "getState" });
   if (!response?.ok) return showToast(response?.error || "Could not load settings.");
   templates = response.templates;
   configurations = response.configurations;
+  accessStates = new Map();
+  for (const configuration of configurations) {
+    const access = { missingOrigins: [] };
+    accessStates.set(configuration.id, access);
+    try {
+      for (const origin of permissionOrigins(configuration.matchPatterns)) {
+        if (!(await chrome.permissions.contains({ origins: [origin] }))) access.missingOrigins.push(origin);
+      }
+    } catch (error) { access.error = error.message; }
+  }
   renderConfigurations();
   renderTemplates();
 }
@@ -95,8 +110,10 @@ function renderConfigurations() {
     top.append(title, toggle);
 
     const meta = div("card-meta");
+    const accessState = accessStates.get(configuration.id);
+    const needsAccess = accessState.error || accessState.missingOrigins.length;
     meta.append(
-      pill(configuration.enabled ? "Active" : "Inactive", configuration.enabled),
+      pill(configuration.enabled ? needsAccess ? "Needs site access" : "Active" : "Disabled", configuration.enabled && !needsAccess),
       pill(configuration.replaceExistingManifest ? "Replaces manifest" : "Adds manifest"),
     );
     const tabColor = resolvedActiveTabColor(configuration);
@@ -110,6 +127,22 @@ function renderConfigurations() {
     source.textContent = configuration.templateId ? "Created from template" : "Custom";
     actions.append(source, actionButtons());
     card.append(top, meta, actions);
+    if (configuration.enabled && needsAccess) {
+      if (accessState.error) card.append(paragraph(accessState.error));
+      else {
+        const access = div("card-actions");
+        for (const origin of accessState.missingOrigins) {
+          const grant = document.createElement("button");
+          grant.type = "button";
+          grant.className = "button quiet";
+          grant.dataset.action = "grant";
+          grant.dataset.origin = origin;
+          grant.textContent = `Grant access: ${origin}`;
+          access.append(grant);
+        }
+        card.append(access);
+      }
+    }
     elements.configurationList.append(card);
   });
 }
@@ -234,8 +267,6 @@ async function saveEditor(event) {
     elements.error.textContent = errors.join(" ");
     return;
   }
-  if (configuration.enabled && !(await requestSiteAccess(configuration))) return;
-
   const response = await chrome.runtime.sendMessage({ type: "saveConfiguration", configuration });
   if (!response.ok) {
     elements.error.textContent = response.error;
@@ -419,13 +450,18 @@ async function discoverSite() {
   }
 
   const origin = originMatchPattern(url);
+  let preexisting;
+  button.disabled = true;
   try {
+    preexisting = await chrome.permissions.contains({ origins: [origin] });
     if (!(await chrome.permissions.request({ origins: [origin] }))) {
       setDiscoveryStatus("Site access is required to inspect this website.", true);
+      button.disabled = false;
       return;
     }
   } catch (error) {
     setDiscoveryStatus(`Could not request site access: ${error.message}`, true);
+    button.disabled = false;
     return;
   }
 
@@ -434,9 +470,7 @@ async function discoverSite() {
   showDiscoveredIcon([]);
   setDiscoveryStatus("Reading website metadata…");
   try {
-    const pageResponse = await fetch(url.href);
-    if (!pageResponse.ok) throw new Error(`Website returned HTTP ${pageResponse.status}.`);
-    const pageUrl = pageResponse.url;
+    const { response: pageResponse, url: pageUrl } = await fetchSameOrigin(url.href);
     const pageDocument = new DOMParser().parseFromString(await pageResponse.text(), "text/html");
     const baseHref = pageDocument.querySelector("base[href]")?.getAttribute("href");
     const pageBaseUrl = baseHref ? new URL(baseHref, pageUrl).href : pageUrl;
@@ -449,9 +483,8 @@ async function discoverSite() {
       if (manifestUrl.origin !== new URL(pageUrl).origin) {
         throw new Error("The manifest is hosted on another domain and needs separate site access.");
       }
-      const manifestResponse = await fetch(manifestUrl.href);
-      if (!manifestResponse.ok) throw new Error(`Manifest returned HTTP ${manifestResponse.status}.`);
-      manifest = resolveImportedManifest(await manifestResponse.json(), manifestResponse.url);
+      const { response: manifestResponse, url: finalManifestUrl } = await fetchSameOrigin(manifestUrl.href, new URL(pageUrl).origin);
+      manifest = resolveImportedManifest(await manifestResponse.json(), finalManifestUrl);
       importedExistingManifest = true;
     } else {
       manifest = inferManifest(pageUrl, extractMetadata(pageDocument, pageBaseUrl));
@@ -486,6 +519,10 @@ async function discoverSite() {
   } catch (error) {
     setDiscoveryStatus(`Could not import website: ${error.message}`, true);
   } finally {
+    if (!preexisting) {
+      const released = await chrome.runtime.sendMessage({ type: "releaseDiscoveryAccess", origin });
+      if (!released?.ok) showToast("Could not release temporary access. Review Chrome's extension site access settings.");
+    }
     button.disabled = false;
     button.textContent = "Import website";
   }
@@ -541,6 +578,15 @@ async function handleConfigurationClick(event) {
   const button = event.target.closest("button[data-action]");
   if (!button) return;
   const configuration = configurations.find((item) => item.id === button.closest(".card").dataset.id);
+  if (button.dataset.action === "grant") {
+    const origin = button.dataset.origin;
+    if (!permissionOrigins(configuration.matchPatterns).includes(origin)) return;
+    const granted = await chrome.permissions.request({ origins: [origin] });
+    await chrome.runtime.sendMessage({ type: "reconcile" });
+    await loadState();
+    showToast(granted ? "Site access granted. Reload matching pages to apply." : "Site access was not granted. Profile remains enabled but inactive.");
+    return;
+  }
   if (button.dataset.action === "edit") openEditor(configuration);
   if (button.dataset.action === "delete") {
     if (!confirm(`Delete “${configuration.name}”? The bundled template will remain available.`)) return;
@@ -555,10 +601,6 @@ async function handleConfigurationToggle(event) {
   if (event.target.dataset.action !== "toggle") return;
   const configuration = configurations.find((item) => item.id === event.target.closest(".card").dataset.id);
   const updated = { ...configuration, enabled: event.target.checked };
-  if (updated.enabled && !(await requestSiteAccess(updated))) {
-    event.target.checked = false;
-    return;
-  }
   const response = await chrome.runtime.sendMessage({ type: "saveConfiguration", configuration: updated });
   if (!response.ok) return showToast(response.error);
   await loadState();
@@ -574,21 +616,9 @@ function handleTemplateClick(event) {
   openEditor(configuration);
 }
 
-async function requestSiteAccess(configuration) {
-  const origins = permissionOrigins(configuration.matchPatterns);
-  const hasAccess = await chrome.permissions.contains({ origins });
-  if (hasAccess) return true;
-  const granted = await chrome.permissions.request({ origins });
-  if (!granted) {
-    elements.error.textContent = "Site access is required before this configuration can be enabled.";
-    showToast("Site access was not granted.");
-  }
-  return granted;
-}
-
 function exportConfigurations() {
   const url = URL.createObjectURL(
-    new Blob([JSON.stringify({ version: 1, configurations }, null, 2)], { type: "application/json" }),
+    new Blob([JSON.stringify({ version: 1, schemaVersion: SCHEMA_VERSION, configurations }, null, 2)], { type: "application/json" }),
   );
   const anchor = document.createElement("a");
   anchor.href = url;
@@ -608,6 +638,7 @@ async function importConfigurations(event) {
     const response = await chrome.runtime.sendMessage({
       type: "replaceConfigurations",
       configurations: data.configurations,
+      schemaVersion: data.schemaVersion,
     });
     if (!response.ok) throw new Error(response.error);
     await loadState();

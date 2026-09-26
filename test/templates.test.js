@@ -65,8 +65,8 @@ test("background assembles all twelve templates offline with valid neutral icons
       set: async (value) => Object.assign(stored, value),
     } },
     action: { onClicked: event },
-    tabs: { onActivated: event, onUpdated: event },
-    permissions: { contains: async () => false },
+    tabs: { onActivated: event, onUpdated: event, query: async () => [] },
+    permissions: { contains: async () => false, onAdded: event, onRemoved: event },
     scripting: { getRegisteredContentScripts: async () => [] },
     declarativeNetRequest: { getDynamicRules: async () => [], updateDynamicRules: async () => {} },
   };

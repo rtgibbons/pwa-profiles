@@ -78,7 +78,7 @@
           <section class="site-discovery full" aria-labelledby="site-discovery-title">
             <div>
               <strong id="site-discovery-title">Start from a website</strong>
-              <small>Import its manifest, or build a draft from page metadata.</small>
+              <small>Requests access to this site to read its page and same-origin manifest. Remote icon previews may contact other servers. Temporary access is released unless an enabled profile needs it.</small>
             </div>
             <div class="site-discovery-controls">
               <label class="sr-only" for="site-url">Website URL</label>
@@ -97,7 +97,7 @@
           <label class="field full">
             <span>Site match patterns</span>
             <textarea id="match-patterns" rows="3" required spellcheck="false"></textarea>
-            <small>One Chrome match pattern per line, such as https://example.com/*</small>
+            <small>One concrete host per pattern, such as https://example.com/app/*. Paths narrow injection, not site permission. Disabling removes site access when no other enabled profile uses it.</small>
           </label>
           <label class="check-field">
             <input id="configuration-enabled" type="checkbox" />
