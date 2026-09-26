@@ -78,6 +78,62 @@ test("concrete origin extraction rejects broad hosts and ignores paths; broad ex
   assert.equal(config.grantIsNeeded("<all_urls>", profiles), true);
 });
 
+test("canonical host parsing agrees across matching, origins and validation without changing path case", () => {
+  for (const [pattern, canonical, yes, no] of [
+    ["https://EXAMPLE.com/App/*", "https://example.com/App/*", "https://example.com:8443/App/inbox?q=1", "https://example.com/app/inbox"],
+    ["http://LOCALHOST/app/*", "http://localhost/app/*", "http://localhost:4173/app/x", "https://localhost:4173/app/x"],
+    ["https://127.0.0.1/*", "https://127.0.0.1/*", "https://127.0.0.1:9443/x", "https://127.0.0.2/x"],
+    ["https://[2001:0DB8:0:0:0:0:0:1]/app/*", "https://[2001:db8::1]/app/*", "https://[2001:db8::1]:8443/app/x", "https://[2001:db8::2]/app/x"],
+    ["http://[::1]/*", "http://[::1]/*", "http://[::1]:4173/x", "http://localhost:4173/x"],
+  ]) {
+    assert.equal(config.validateMatchPattern(pattern), true, pattern);
+    assert.equal(config.parseMatchPattern(pattern).canonical, canonical);
+    assert.equal(config.patternMatchesUrl(pattern, yes), true, pattern);
+    assert.equal(config.patternMatchesUrl(pattern, no), false, pattern);
+    assert.deepEqual(config.permissionOrigins([pattern]), [canonical.replace(/(\/\/[^/]+)\/.*$/, "$1/*")]);
+  }
+  assert.equal(config.parseMatchPattern("*://*.EXAMPLE.com/Case/*").canonical, "*://*.example.com/Case/*");
+  assert.equal(config.patternMatchesUrl("https://*.EXAMPLE.com/*", "https://sub.example.com:8443/"), true);
+  assert.equal(config.patternMatchesUrl("https://*.EXAMPLE.com/*", "https://notexample.com/"), false);
+  assert.throws(() => config.permissionOrigins(["https://*.EXAMPLE.com/*"]), /concrete/);
+});
+
+test("ports, credentials and malformed hosts fail consistently rather than being silently broadened", () => {
+  for (const host of ["example.com:443", "EXAMPLE.com:8443", "localhost:80", "127.0.0.1:4173", "[::1]:443", "[2001:db8::1]:8443"]) {
+    const pattern = `https://${host}/*`;
+    assert.equal(config.validateMatchPattern(pattern), false);
+    assert.throws(() => config.permissionOrigins([pattern]), /Chrome site access applies to all ports; remove the port/);
+    assert.equal(config.patternMatchesUrl(pattern, `https://${host}/x`), false);
+    assert.match(config.validateConfiguration(profile("invalid", [pattern])).join(" "), /all ports/);
+  }
+  for (const host of ["user@example.com", "user:secret@example.com", "[::1", "::1]", "[::1]suffix", "[[::1]]", "[not-ipv6]", "*.[]", "*.*", "bad%2ehost", "bad host", "example.com\\evil"]) {
+    const pattern = `https://${host}/*`;
+    assert.equal(config.validateMatchPattern(pattern), false, host);
+    assert.throws(() => config.permissionOrigins([pattern]), undefined, host);
+    assert.equal(config.patternMatchesUrl(pattern, "https://example.com/"), false);
+  }
+  assert.equal(config.patternMatchesUrl("https://example.com/*", "not a URL"), false);
+});
+
+test("invalid legacy profiles are preserved/inert and cannot poison canonical reconciliation or page selection", async () => {
+  const profiles = [profile("port", ["https://example.com:443/app/*"]),
+    profile("brackets", ["https://[::1/app/*"]),
+    profile("mixed", ["https://EXAMPLE.com/app/*", "https://example.com:8443/*"]),
+    profile("valid", ["https://EXAMPLE.com/app/*"])];
+  const w = worker({ configurations: profiles, configurationSchemaVersion: 2 }, ["https://example.com/*"]);
+  await w.send({ type: "reconcile" });
+  assert.deepEqual(plain(w.stored.configurations), profiles);
+  assert.deepEqual(w.scripts()[0].matches, ["https://example.com/app/*"]);
+  const result = await w.send({ type: "getConfigurationForPage" }, { tab: { id: 7, url: "https://example.com:8443/app/x" } });
+  assert.equal(result.configuration.id, "valid");
+  assert.equal((await w.send({ type: "saveConfiguration", configuration: profile("new", ["https://example.com:443/*"]) })).ok, false);
+  assert.equal((await w.send({ type: "saveConfiguration", configuration: { ...profiles[0], enabled: false } })).ok, true);
+  assert.equal((await w.send({ type: "replaceConfigurations", configurations: profiles, schemaVersion: 3 })).ok, true);
+  assert.deepEqual(w.stored.configurations.map(value => value.matchPatterns), profiles.map(value => value.matchPatterns));
+  assert.ok(w.stored.configurations.every(value => value.enabled === false));
+  assert.deepEqual(w.scripts(), []);
+});
+
 test("enabled without access is inert, permission events register narrowed paths and revocation preserves enabled", async () => {
   const w = worker({ configurations: [profile("a")], configurationSchemaVersion: 3 });
   await w.send({ type: "reconcile" });

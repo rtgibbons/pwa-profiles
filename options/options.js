@@ -117,7 +117,7 @@ function renderConfigurations() {
     const accessState = accessStates.get(configuration.id);
     const needsAccess = accessState.error || accessState.missingOrigins.length;
     meta.append(
-      pill(configuration.enabled ? needsAccess ? "Needs site access" : "Active" : "Disabled", configuration.enabled && !needsAccess),
+      pill(accessState.error ? "Invalid site pattern" : configuration.enabled ? needsAccess ? "Needs site access" : "Active" : "Disabled", configuration.enabled && !needsAccess),
       pill(configuration.replaceExistingManifest ? "Replaces manifest" : "Adds manifest"),
     );
     const tabColor = resolvedActiveTabColor(configuration);
@@ -131,21 +131,19 @@ function renderConfigurations() {
     source.textContent = configuration.templateId ? "Created from template" : "Custom";
     actions.append(source, actionButtons());
     card.append(top, meta, actions);
-    if (configuration.enabled && needsAccess) {
-      if (accessState.error) card.append(paragraph(accessState.error));
-      else {
-        const access = div("card-actions");
-        for (const origin of accessState.missingOrigins) {
-          const grant = document.createElement("button");
-          grant.type = "button";
-          grant.className = "button quiet";
-          grant.dataset.action = "grant";
-          grant.dataset.origin = origin;
-          grant.textContent = `Grant access: ${origin}`;
-          access.append(grant);
-        }
-        card.append(access);
+    if (accessState.error) card.append(paragraph(accessState.error));
+    else if (configuration.enabled && needsAccess) {
+      const access = div("card-actions");
+      for (const origin of accessState.missingOrigins) {
+        const grant = document.createElement("button");
+        grant.type = "button";
+        grant.className = "button quiet";
+        grant.dataset.action = "grant";
+        grant.dataset.origin = origin;
+        grant.textContent = `Grant access: ${origin}`;
+        access.append(grant);
       }
+      card.append(access);
     }
     elements.configurationList.append(card);
   });

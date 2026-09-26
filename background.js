@@ -6,6 +6,7 @@ import {
   configurationForUrl,
   grantIsNeeded,
   hasSiteAccess,
+  parseMatchPattern,
   permissionOrigins,
   validateConfiguration,
 } from "./lib/config.js";
@@ -165,11 +166,13 @@ async function readConfigurations() {
 
 async function saveConfiguration(configuration) {
   [configuration] = preserveLegacyRules([configuration]);
-  const errors = validateConfiguration(configuration);
-  if (errors.length) return { ok: false, error: errors.join(" ") };
-
   const configurations = await readConfigurations();
   const index = configurations.findIndex((item) => item.id === configuration.id);
+  const unchangedDisabledPatterns = configuration.enabled === false && index !== -1 &&
+    JSON.stringify(configuration.matchPatterns) === JSON.stringify(configurations[index].matchPatterns);
+  const errors = validateConfiguration(configuration, { allowInvalidPatterns: unchangedDisabledPatterns });
+  if (errors.length) return { ok: false, error: errors.join(" ") };
+
   const value = {
     ...structuredClone(configuration),
     id: configuration.id || crypto.randomUUID(),
@@ -195,7 +198,7 @@ async function replaceConfigurations(configurations, schemaVersion = 1) {
   if (!Array.isArray(configurations)) return { ok: false, error: "Import must contain an array." };
   configurations = migrateConfigurations(configurations, schemaVersion, await loadTemplates());
   const errors = configurations.flatMap((configuration, index) =>
-    validateConfiguration(configuration).map((error) => `Configuration ${index + 1}: ${error}`),
+    validateConfiguration(configuration, { allowInvalidPatterns: true }).map((error) => `Configuration ${index + 1}: ${error}`),
   );
   if (errors.length) return { ok: false, error: errors.join(" ") };
 
@@ -303,7 +306,8 @@ async function reconcile() {
 
   const existing = await chrome.scripting.getRegisteredContentScripts({ ids: [CONTENT_SCRIPT_ID] });
   if (existing.length) await chrome.scripting.unregisterContentScripts({ ids: [CONTENT_SCRIPT_ID] });
-  const matches = [...new Set(enabled.flatMap((configuration) => configuration.matchPatterns))];
+  const matches = [...new Set(enabled.flatMap((configuration) =>
+    configuration.matchPatterns.map((pattern) => parseMatchPattern(pattern).canonical)))];
   if (matches.length) {
     await chrome.scripting.registerContentScripts([
       {
